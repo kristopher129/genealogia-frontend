@@ -1,0 +1,200 @@
+/* ==== Líneas de conexión ==== */
+.linage {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+.marriage {
+  fill: none;
+  stroke: #999;
+  stroke-width: 2.5px;
+}
+
+/* ==== Nodo principal ==== */
+.node {
+  cursor: pointer;
+}
+
+.node rect {
+  fill: #fff;
+  stroke: #666;
+  stroke-width: 1.5px;
+  rx: 6;
+  ry: 6;
+}
+
+.node:hover rect {
+  stroke: #0074d9;
+  stroke-width: 2px;
+}
+
+/* ==== Texto del nodo ==== */
+.nodeText {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 12px;
+  fill: #000000; /* Cambiado a negro */
+  text-anchor: middle;
+}
+
+.nodeText .name {
+  font-weight: bold;
+  fill: #000000; /* Asegurando que el nombre sea negro */
+}
+
+.nodeText .extra {
+  font-size: 11px;
+  fill: #000000; /* Cambiado a negro */
+}
+
+/* ==== Fondo general ==== */
+.dtree-container {
+  background: #ffffff;
+  border: none;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Estilos adicionales para accesibilidad y responsividad */
+.family-tree-container {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+}
+
+/* Estilo para nodos con énfasis */
+.emphasis {
+  font-weight: bold;
+  fill: #000000; /* Cambiado a negro */
+}
+
+.error-message {
+  color: red;
+  padding: 10px;
+  margin: 0;
+  border: 1px solid red;
+  border-radius: 4px;
+  background-color: rgba(255, 0, 0, 0.1);
+  position: absolute;
+  z-index: 100;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.loading-indicator {
+  padding: 20px;
+  margin: 0;
+  position: absolute;
+  z-index: 100;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tree-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.tree-layout__panel {
+  width: 320px;
+  min-width: 280px;
+  max-width: 360px;
+  padding: 24px;
+  border-right: 1px solid #eaecf0;
+  background-color: #f9fafb;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tree-layout__section {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.tree-layout__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.tree-layout__selected {
+  font-size: 14px;
+  margin: 0;
+  color: #475467;
+}
+
+.graph-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  position: relative;
+}
+
+.graph-container--hidden {
+  display: none;
+}
+
+.graph {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  position: relative;
+  will-change: transform;
+}
+
+.graph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-color: #ffffff;
+}
+
+/* Mejora de accesibilidad para foco en nodos */
+[role="button"]:focus {
+  outline: 2px solid #0074d9;
+  outline-offset: 2px;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .nodeText {
+    font-size: 10px;
+  }
+  
+  .nodeText .extra {
+    font-size: 9px;
+  }
+}
+
+/* Evitar duplicación de estilos */
+.node rect {
+  fill: #fff;
+  stroke: #666;
+  stroke-width: 1.5px;
+  rx: 6;
+  ry: 6;
+}
