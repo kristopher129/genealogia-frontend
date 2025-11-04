@@ -134,6 +134,89 @@ export const escapeHtml = (unsafe) => {
     .replace(/'/g, "&#039;");
 };
 
+const fixNodeSpouses = (node, originalDataMap) => {
+  if (!node || !Array.isArray(node.marriages)) {
+    return node;
+  }
+
+  const originalMember = originalDataMap.get(node.id);
+  const partnerIds = originalMember ? ensurePartnersArray(originalMember.partners) : [];
+  const usedSpouseIds = new Set();
+
+  console.log(`[FIXING] Fixing spouses for node ${node.name} (ID: ${node.id}), partners: [${partnerIds.join(', ')}]`);
+
+  const fixedMarriages = node.marriages.map((marriage, index) => {
+    if (!marriage || !marriage.spouse) {
+      return marriage;
+    }
+
+    let spouse = marriage.spouse;
+    const originalSpouseMember = originalDataMap.get(spouse.id);
+
+    console.log(`[FIXING] Marriage ${index}: current spouse ${spouse.name} (ID: ${spouse.id}, gender: ${spouse.gender}), used spouses: [${Array.from(usedSpouseIds).join(', ')}]`);
+
+    // If the spouse ID is not in the partners array or is the node itself, find the correct partner
+    if (!partnerIds.includes(spouse.id) || spouse.id === node.id) {
+      console.log(`[FIXING] Spouse ID ${spouse.id} is invalid, finding correct partner...`);
+      // Find an unused partner ID
+      const availablePartners = partnerIds.filter(id => !usedSpouseIds.has(id) && id !== node.id);
+      console.log(`[FIXING] Available partners: [${availablePartners.join(', ')}]`);
+      if (availablePartners.length > 0) {
+        const correctSpouseId = availablePartners[0];
+        const correctSpouseMember = originalDataMap.get(correctSpouseId);
+        console.log(`[FIXING] Correcting spouse to ${correctSpouseMember?.name} (ID: ${correctSpouseId}, gender: ${correctSpouseMember?.gender})`);
+        if (correctSpouseMember) {
+          // For corrected spouses, use the gender from the original member
+          spouse = {
+            id: correctSpouseId,
+            name: correctSpouseMember.name,
+            gender: correctSpouseMember.gender,
+            nickname: correctSpouseMember.nickname,
+          };
+          console.log(`[FIXING] Created corrected spouse: ${spouse.name} (ID: ${spouse.id}, gender: ${spouse.gender})`);
+        }
+      }
+    }
+
+    // Mark this spouse ID as used
+    usedSpouseIds.add(spouse.id);
+
+    // Update the name, gender and nickname if we have the original member data
+    if (originalSpouseMember && spouse.id === originalSpouseMember.id) {
+      console.log(`[FIXING] Updating existing spouse ${spouse.name} with original data (gender: ${originalSpouseMember.gender})`);
+      spouse = {
+        ...spouse,
+        name: originalSpouseMember.name,
+        gender: originalSpouseMember.gender,
+        nickname: originalSpouseMember.nickname,
+      };
+      console.log(`[FIXING] Updated spouse: ${spouse.name} (ID: ${spouse.id}, gender: ${spouse.gender})`);
+    }
+
+    // Recursively fix children
+    const fixedChildren = marriage.children.map(child => fixNodeSpouses(child, originalDataMap));
+
+    return {
+      ...marriage,
+      spouse,
+      children: fixedChildren,
+    };
+  });
+
+  return {
+    ...node,
+    marriages: fixedMarriages,
+  };
+};
+
+export const fixMultipleSpouseNames = (seededData, originalDataMap) => {
+  if (!Array.isArray(seededData)) {
+    return seededData;
+  }
+
+  return seededData.map((node) => fixNodeSpouses(node, originalDataMap));
+};
+
 export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNodeClick }) => {
   const graphRef = useRef(null);
   const treeInstanceRef = useRef(null);
@@ -201,8 +284,56 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
           console.debug("📊 Datos enviados al dSeeder.seed:", dataCopy);
         }
 
+        console.log(`[SEEDING] Starting seeding with targetId: ${targetId}`);
+        console.log(`[SEEDING] dataCopy members:`, dataCopy.map(m => ({id: m.id, name: m.name})));
+
         const seededData = dSeeder.seed(dataCopy, targetId, options);
 
+        const printTree = (node, depth = 0) => {
+          const indent = '  '.repeat(depth);
+          console.log(`${indent}Node: ${node.name} (ID: ${node.id})`);
+          node.marriages.forEach((marriage, idx) => {
+            console.log(`${indent}  Marriage ${idx}:`);
+            if (marriage.spouse) {
+              console.log(`${indent}    Spouse: ${marriage.spouse.name} (ID: ${marriage.spouse.id})`);
+            }
+            marriage.children.forEach(child => {
+              printTree(child, depth + 2);
+            });
+          });
+        };
+
+        console.log(`[SEEDING] Seeded data structure:`);
+        seededData.forEach(node => printTree(node));
+
+        // Create a map of original data for fixing spouse names
+        const originalDataMap = new Map(dataCopy.map(member => [member.id, member]));
+        const fixedSeededData = fixMultipleSpouseNames(seededData, originalDataMap);
+
+        // Update classes for corrected spouses
+        const updateNodeClasses = (node) => {
+          if (node && Array.isArray(node.marriages)) {
+            node.marriages.forEach(marriage => {
+              if (marriage.spouse) {
+                // Update spouse class based on corrected gender
+                marriage.spouse.class = marriage.spouse.gender;
+                console.log(`[CLASS UPDATE] Updated spouse ${marriage.spouse.name} class to: ${marriage.spouse.class}`);
+              }
+              // Recursively update children
+              marriage.children.forEach(updateNodeClasses);
+            });
+          }
+        };
+
+        fixedSeededData.forEach(updateNodeClasses);
+
+        console.log(`[SEEDING] Fixed seeded data:`, fixedSeededData.map(node => ({
+          id: node.id,
+          name: node.name,
+          marriages: node.marriages.map(m => ({
+            spouse: m.spouse ? { id: m.spouse.id, name: m.spouse.name } : null
+          }))
+        })));
 
         const preservedSvg = d3.select(initialContainer).select("svg");
         const preservedGroup = preservedSvg.select("g");
@@ -215,7 +346,7 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
           initialContainer.innerHTML = "";
         }
 
-        treeInstanceRef.current = dTree.init(seededData, {
+        treeInstanceRef.current = dTree.init(fixedSeededData, {
           target: initialContainer,
           debug: false,
           height,

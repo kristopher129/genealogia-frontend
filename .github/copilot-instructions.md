@@ -3,9 +3,8 @@ Proveer a los asistentes de código (Copilot/AGENT) la información esencial par
 
 ## Resumen alto nivel
 - Proyecto: aplicación React creada con Create React App (usa `react-scripts`).
-- Dominio: visualización y edición de un árbol genealógico (nodos: "caballos"/entidades y relaciones padre-hijo).
+- Dominio: visualización y edición de un árbol genealógico para caballos(nodos: "caballos"/entidades y relaciones padre-hijo y parejas).
 - Librerías clave: `react`, `react-dom`, `d3`, `d3-dtree`, `dtree-seed`, `lodash`.
-
 ## Estructura importante y responsabilidades
 - `src/components/FamilyTree.js` — componente contenedor principal. Usa el custom hook `useFamilyTreeState` y efectos definidos en `familyTreeEffects.js`. Renderiza `FamilyTreePanel` y el contenedor del grafo (`#graph`).
 - `src/hooks/useFamilyTreeState.js` — lógica de estado principal (acciones, selectores, import/export, persistencia). Inspeccionar para entender la forma de los datos y las APIs internas.
