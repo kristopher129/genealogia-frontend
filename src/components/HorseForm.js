@@ -194,6 +194,12 @@ const HorseForm = ({
     setFormSex(event.target.value);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !isSubmitDisabled) {
+      handleSubmit();
+    }
+  };
+
   const isSubmitDisabled =
     formName.trim().length === 0 || (relationType === RELATION_TYPES.HIJO && !isChildReady);
   const helperColor = helperMessage ? "#b42318" : "#475467";
@@ -233,6 +239,7 @@ const HorseForm = ({
           placeholder="Nombre del nuevo caballo"
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
+          onKeyDown={handleKeyDown}
           style={FORM_STYLES.input}
           maxLength={50}
         />
@@ -247,6 +254,7 @@ const HorseForm = ({
           <select
             value={relationType === RELATION_TYPES.PADRE && lockedParentSex ? lockedParentSex : formSex}
             onChange={handleSexChange}
+            onKeyDown={handleKeyDown}
             style={FORM_STYLES.select}
             disabled={relationType === RELATION_TYPES.PADRE && !!lockedParentSex}
           >
