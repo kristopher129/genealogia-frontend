@@ -73,3 +73,6 @@ npm test
 - Custom node styling
 - Connection line styling
 - Interactive hover effects
+-Haz el codigo mas ordenado y con buenas practicas
+-Siempre testear que los cambios no afecten al funcionamiento total del codigo
+-Si hay problemas, investigar que esta afectando el funcionamiento
