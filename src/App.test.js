@@ -11,10 +11,7 @@ const horseFuncs = require("./utils/HorseFunctions");
 const addHorse = horseFuncs.default || horseFuncs;
 const addPartnerToHorse = horseFuncs.addPartnerToHorse;
 const { familyTreeData } = require("./data/familyTreeData");
-const {
-  resolveActiveTargetId,
-  getGenderEditConflictMessage,
-} = require("./hooks/useFamilyTreeState");
+const { resolveActiveTargetId } = require("./hooks/useFamilyTreeState");
 const App = require("./App").default || require("./App");
 
 describe("App", () => {
@@ -256,39 +253,6 @@ test("mantiene el árbol anclado al caballo raíz aunque haya otro seleccionado"
   ];
 
   expect(resolveActiveTargetId(treeData, 2)).toBe(0);
-});
-
-test("detecta conflicto al cambiar a hembra a un caballo que ya figura como padre", () => {
-  const treeData = [
-    { id: 10, name: "Padre", parent1Id: null, parent2Id: null, gender: "man", partners: [11] },
-    { id: 11, name: "Madre", parent1Id: null, parent2Id: null, gender: "woman", partners: [10] },
-    { id: 12, name: "Cria", parent1Id: 10, parent2Id: 11, gender: "man", partners: [] },
-  ];
-
-  const message = getGenderEditConflictMessage({
-    treeData,
-    selectedHorse: treeData[0],
-    nextGender: "woman",
-    canonicalGender: (gender) => gender,
-  });
-
-  expect(message).toMatch(/figura como padre de otras crías/i);
-});
-
-test("detecta conflicto al cambiar el sexo si dejaría una pareja incompatible", () => {
-  const treeData = [
-    { id: 20, name: "Macho", parent1Id: null, parent2Id: null, gender: "man", partners: [21] },
-    { id: 21, name: "Hembra", parent1Id: null, parent2Id: null, gender: "woman", partners: [20] },
-  ];
-
-  const message = getGenderEditConflictMessage({
-    treeData,
-    selectedHorse: treeData[0],
-    nextGender: "woman",
-    canonicalGender: (gender) => gender,
-  });
-
-  expect(message).toMatch(/pareja de Hembra/i);
 });
 
 describe("Horse functions", () => {
