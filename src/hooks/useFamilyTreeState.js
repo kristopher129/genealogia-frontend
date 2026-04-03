@@ -741,7 +741,6 @@ export function useFamilyTreeState() {
           return;
         }
         pushUndoHistory();
-        console.log(`[PARTNER CREATION] Adding partner "${name}" to horse "${selectedHorse.name}" (ID: ${selectedHorse.id})`);
         const membersWithPartner = addHorse(treeData, {
           name,
           parent1Id: null,
@@ -755,7 +754,6 @@ export function useFamilyTreeState() {
           setManualHelper("No se pudo registrar la nueva pareja.");
           return;
         }
-        console.log(`[PARTNER CREATION] Created partner with ID: ${createdPartner.id}`);
         const synchronized = synchronizePartners(
           membersWithPartner,
           selectedHorse.id,
@@ -771,8 +769,6 @@ export function useFamilyTreeState() {
           selectedHorse.id,
           createdPartner.id
         );
-        console.log(`[TREE UPDATE] Setting treeData with ${withChild.length} members`);
-        console.log(`[TREE UPDATE] Members:`, withChild.map(m => ({id: m.id, name: m.name})));
         setTreeData(withChild);
         setSelectedHorseId(selectedHorse.id);
         const helperText = childName
