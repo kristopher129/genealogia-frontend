@@ -1,6 +1,6 @@
 import React from "react";
 import { RELATION_TYPES, SEXO } from "./HorseForm";
-import FamilyTreePanel from "./FamilyTreePanelWithUndo";
+import FamilyTreePanel from "./FamilyTreePanel";
 import {
   useFamilyTreeComponentEffects,
   usePersistTreeDataEffect,
@@ -142,3 +142,4 @@ const FamilyTree = () => {
 };
 
 export default FamilyTree;
+
