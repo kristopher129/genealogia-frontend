@@ -197,6 +197,8 @@ export const useFamilyTreeComponentEffects = ({
   setSelectedHorseId,
   selectedHorseId,
   setChildParents,
+  selectedFather,
+  selectedMother,
   childPartnerOptions,
   selectedChildPartnerId,
   selectedHorse,
@@ -207,6 +209,8 @@ export const useFamilyTreeComponentEffects = ({
   SEXO,
   setEditName,
   setEditSex,
+  setFatherSearch,
+  setMotherSearch,
   resizeTimeoutRef,
   graphRef,
   setDimensions,
@@ -247,95 +251,22 @@ export const useFamilyTreeComponentEffects = ({
   }, [childPartnerOptions, selectedChildPartnerId, selectedHorse, setSelectedChildPartnerId]);
 
   useEffect(() => {
-    if (activeRelationType !== RELATION_TYPES.HIJO) {
-      if (selectedChildPartnerId != null) {
-        setSelectedChildPartnerId(null);
-      }
-      return;
+    if (activeRelationType !== RELATION_TYPES.HIJO && selectedChildPartnerId != null) {
+      setSelectedChildPartnerId(null);
     }
-    if (!selectedHorse) {
-      if (selectedChildPartnerId != null) {
-        setSelectedChildPartnerId(null);
-      }
-      setChildParents((prev) => {
-        if (prev.fatherId == null && prev.motherId == null) {
-          return prev;
-        }
-        return { fatherId: null, motherId: null };
-      });
-      return;
+  }, [activeRelationType, selectedChildPartnerId, setSelectedChildPartnerId, RELATION_TYPES]);
+
+  useEffect(() => {
+    if (selectedFather?.name) {
+      setFatherSearch(selectedFather.name);
     }
-    let partnerToUse = childPartnerOptions.find((partner) => partner.id === selectedChildPartnerId) ?? null;
-    if (!partnerToUse && childPartnerOptions.length > 0) {
-      const selectedCanonical = canonicalGender(selectedHorse.gender);
-      const defaultPartner =
-        childPartnerOptions.find((candidate) => {
-          const candidateCanonical = canonicalGender(candidate.gender);
-          return candidateCanonical && selectedCanonical && candidateCanonical !== selectedCanonical;
-        }) ?? childPartnerOptions[0];
-      if (defaultPartner) {
-        partnerToUse = defaultPartner;
-        if (selectedChildPartnerId !== defaultPartner.id) {
-          setSelectedChildPartnerId(defaultPartner.id);
-        }
-      }
+  }, [selectedFather, setFatherSearch]);
+
+  useEffect(() => {
+    if (selectedMother?.name) {
+      setMotherSearch(selectedMother.name);
     }
-    if (!partnerToUse) {
-      const selectedCanonical = canonicalGender(selectedHorse.gender);
-      const nextState = {
-        fatherId: selectedCanonical === "man" ? selectedHorse.id : null,
-        motherId: selectedCanonical === "woman" ? selectedHorse.id : null,
-      };
-      setChildParents((prev) => {
-        if (prev.fatherId === nextState.fatherId && prev.motherId === nextState.motherId) {
-          return prev;
-        }
-        return nextState;
-      });
-      return;
-    }
-    const selectedCanonical = canonicalGender(selectedHorse.gender);
-    const partnerCanonical = canonicalGender(partnerToUse.gender);
-    let fatherId = null;
-    let motherId = null;
-    if (selectedCanonical === "man") {
-      fatherId = selectedHorse.id;
-    }
-    if (selectedCanonical === "woman") {
-      motherId = selectedHorse.id;
-    }
-    if (partnerCanonical === "man") {
-      fatherId = partnerToUse.id;
-    }
-    if (partnerCanonical === "woman") {
-      motherId = partnerToUse.id;
-    }
-    if (fatherId == null) {
-      fatherId = partnerToUse.id !== motherId ? partnerToUse.id : selectedHorse.id;
-    }
-    if (motherId == null) {
-      motherId = partnerToUse.id !== fatherId ? partnerToUse.id : selectedHorse.id;
-    }
-    if (fatherId === motherId) {
-      if (selectedCanonical === "woman") {
-        fatherId = partnerToUse.id;
-        motherId = selectedHorse.id;
-      } else {
-        fatherId = selectedHorse.id;
-        motherId = partnerToUse.id;
-      }
-      if (fatherId === motherId) {
-        motherId = null;
-      }
-    }
-    const nextState = { fatherId, motherId };
-    setChildParents((prev) => {
-      if (prev.fatherId === nextState.fatherId && prev.motherId === nextState.motherId) {
-        return prev;
-      }
-      return nextState;
-    });
-  }, [activeRelationType, canonicalGender, childPartnerOptions, selectedChildPartnerId, selectedHorse, setChildParents, setSelectedChildPartnerId, RELATION_TYPES]);
+  }, [selectedMother, setMotherSearch]);
 
   useEffect(() => {
     if (!selectedHorse) {

@@ -114,3 +114,15 @@ export const TAB_CONTENT_STYLE = {
   flexDirection: "column",
   gap: 16,
 };
+
+export const UNDO_BUTTON_STYLE = {
+  padding: "6px 10px",
+  borderRadius: 8,
+  border: "1px solid #d0d5dd",
+  backgroundColor: "#ffffff",
+  color: "#344054",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  alignSelf: "flex-start",
+};

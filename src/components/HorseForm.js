@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useId } from "react";
 import PropTypes from 'prop-types';
 
 export const RELATION_TYPES = {
@@ -69,6 +69,11 @@ const FORM_STYLES = {
     minHeight: 18,
     textAlign: "left",
   },
+  searchGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
 };
 
 const BUTTON_STYLES = {
@@ -136,10 +141,19 @@ const HorseForm = ({
   childPartnerOptions,
   selectedChildPartnerId,
   onChildPartnerSelect,
+  fatherSearch,
+  motherSearch,
+  maleHorseOptions,
+  femaleHorseOptions,
+  onFatherSearchChange,
+  onMotherSearchChange,
+  onFatherSelect,
+  onMotherSelect,
 }) => {
   const [relationType, setRelationType] = useState(RELATION_TYPES.HIJO);
   const [formName, setFormName] = useState("");
   const [formSex, setFormSex] = useState(SEXO.MACHO);
+  const datalistBaseId = useId();
 
   useEffect(() => {
     onRelationTypeChange?.(RELATION_TYPES.HIJO);
@@ -199,6 +213,27 @@ const HorseForm = ({
       handleSubmit();
     }
   };
+
+  const normalizeSearchValue = (value) => value.trim().toLowerCase();
+  const filteredMaleOptions = useMemo(() => {
+    const query = normalizeSearchValue(fatherSearch || "");
+    if (!query) {
+      return maleHorseOptions;
+    }
+    return maleHorseOptions.filter((horse) =>
+      horse.name.toLowerCase().includes(query)
+    );
+  }, [fatherSearch, maleHorseOptions]);
+
+  const filteredFemaleOptions = useMemo(() => {
+    const query = normalizeSearchValue(motherSearch || "");
+    if (!query) {
+      return femaleHorseOptions;
+    }
+    return femaleHorseOptions.filter((horse) =>
+      horse.name.toLowerCase().includes(query)
+    );
+  }, [femaleHorseOptions, motherSearch]);
 
   const isSubmitDisabled =
     formName.trim().length === 0 || (relationType === RELATION_TYPES.HIJO && !isChildReady);
@@ -274,9 +309,67 @@ const HorseForm = ({
             ...FORM_STYLES.description,
             display: "flex",
             flexDirection: "column",
-            gap: 4,
+            gap: 12,
           }}
         >
+          <div style={FORM_STYLES.searchGroup}>
+            <div>
+              <label style={FORM_STYLES.label} htmlFor={`${datalistBaseId}-father`}>
+                Padre
+              </label>
+              <input
+                id={`${datalistBaseId}-father`}
+                type="text"
+                list={`${datalistBaseId}-father-list`}
+                placeholder="Escribe el nombre de un macho"
+                value={fatherSearch}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  onFatherSearchChange?.(value);
+                  const selectedOption = maleHorseOptions.find(
+                    (horse) => horse.name === value
+                  );
+                  if (selectedOption) {
+                    onFatherSelect?.(selectedOption.id);
+                  }
+                }}
+                style={FORM_STYLES.input}
+              />
+              <datalist id={`${datalistBaseId}-father-list`}>
+                {filteredMaleOptions.map((horse) => (
+                  <option key={horse.id} value={horse.name} />
+                ))}
+              </datalist>
+            </div>
+            <div>
+              <label style={FORM_STYLES.label} htmlFor={`${datalistBaseId}-mother`}>
+                Madre
+              </label>
+              <input
+                id={`${datalistBaseId}-mother`}
+                type="text"
+                list={`${datalistBaseId}-mother-list`}
+                placeholder="Escribe el nombre de una hembra"
+                value={motherSearch}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  onMotherSearchChange?.(value);
+                  const selectedOption = femaleHorseOptions.find(
+                    (horse) => horse.name === value
+                  );
+                  if (selectedOption) {
+                    onMotherSelect?.(selectedOption.id);
+                  }
+                }}
+                style={FORM_STYLES.input}
+              />
+              <datalist id={`${datalistBaseId}-mother-list`}>
+                {filteredFemaleOptions.map((horse) => (
+                  <option key={horse.id} value={horse.name} />
+                ))}
+              </datalist>
+            </div>
+          </div>
           {childPartnerOptions.length > 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span>Pareja seleccionada:</span>
@@ -338,6 +431,14 @@ HorseForm.propTypes = {
   childPartnerOptions: PropTypes.array,
   selectedChildPartnerId: PropTypes.number,
   onChildPartnerSelect: PropTypes.func,
+  fatherSearch: PropTypes.string,
+  motherSearch: PropTypes.string,
+  maleHorseOptions: PropTypes.array,
+  femaleHorseOptions: PropTypes.array,
+  onFatherSearchChange: PropTypes.func,
+  onMotherSearchChange: PropTypes.func,
+  onFatherSelect: PropTypes.func,
+  onMotherSelect: PropTypes.func,
 };
 
 HorseForm.defaultProps = {
@@ -355,4 +456,12 @@ HorseForm.defaultProps = {
   childPartnerOptions: [],
   selectedChildPartnerId: null,
   onChildPartnerSelect: null,
+  fatherSearch: "",
+  motherSearch: "",
+  maleHorseOptions: [],
+  femaleHorseOptions: [],
+  onFatherSearchChange: null,
+  onMotherSearchChange: null,
+  onFatherSelect: null,
+  onMotherSelect: null,
 };

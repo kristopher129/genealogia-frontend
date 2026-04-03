@@ -20,6 +20,7 @@ export function useFamilyTreeState() {
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const resizeTimeoutRef = useRef(null);
   const [treeData, setTreeData] = useState(() => initializeTreeData());
+  const [undoHistory, setUndoHistory] = useState([]);
   const [selectedHorseId, setSelectedHorseId] = useState(targetPersonId);
   const [activeRelationType, setActiveRelationType] = useState(
     RELATION_TYPES.HIJO
@@ -28,6 +29,8 @@ export function useFamilyTreeState() {
     fatherId: null,
     motherId: null,
   });
+  const [fatherSearch, setFatherSearch] = useState("");
+  const [motherSearch, setMotherSearch] = useState("");
   const [selectedChildPartnerId, setSelectedChildPartnerId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editSex, setEditSex] = useState(SEXO.MACHO);
@@ -95,6 +98,24 @@ export function useFamilyTreeState() {
     const value = String(gender).toLowerCase();
     return value === "hembra" || value === "woman" || value === "female";
   }, []);
+  const maleHorseOptions = useMemo(
+    () =>
+      treeData
+        .filter((member) => isMale(member.gender))
+        .sort((first, second) =>
+          first.name.localeCompare(second.name, "es", { sensitivity: "base" })
+        ),
+    [isMale, treeData]
+  );
+  const femaleHorseOptions = useMemo(
+    () =>
+      treeData
+        .filter((member) => isFemale(member.gender))
+        .sort((first, second) =>
+          first.name.localeCompare(second.name, "es", { sensitivity: "base" })
+        ),
+    [isFemale, treeData]
+  );
   const canonicalGender = useCallback(
     (gender) => {
       if (isMale(gender)) {
@@ -190,72 +211,37 @@ export function useFamilyTreeState() {
       }
 
       setSelectedHorseId(horseId);
-
-      if (activeRelationType === RELATION_TYPES.HIJO) {
-        const member = treeData.find((item) => item.id === horseId);
-        if (!member) {
-          return;
-        }
-
-        const assignFather = isMale(member.gender);
-        const assignMother = isFemale(member.gender);
-
-        if (!assignFather && !assignMother) {
-          return;
-        }
-
-        if (
-          selectedHorse &&
-          ensurePartnersArray(selectedHorse.partners).includes(horseId)
-        ) {
-          setSelectedChildPartnerId(horseId);
-        }
-
-        setChildParents((prev) => {
-          if (assignFather && prev.fatherId === horseId) {
-            return prev;
-          }
-          if (assignMother && prev.motherId === horseId) {
-            return prev;
-          }
-          const next = {
-            ...prev,
-            ...(assignFather ? { fatherId: horseId } : {}),
-            ...(assignMother ? { motherId: horseId } : {}),
-          };
-          if (
-            !assignFather &&
-            assignMother &&
-            selectedHorse &&
-            ensurePartnersArray(selectedHorse.partners).includes(horseId)
-          ) {
-            setSelectedChildPartnerId(horseId);
-          }
-          if (
-            assignFather &&
-            !assignMother &&
-            selectedHorse &&
-            ensurePartnersArray(selectedHorse.partners).includes(horseId)
-          ) {
-            setSelectedChildPartnerId(horseId);
-          }
-          if (next.fatherId && next.motherId) {
-            setManualHelper("");
-          }
-          return next;
-        });
-      }
     },
+    []
+  );
+  const createHistoryEntry = useCallback(
+    () => ({
+      treeData: treeData.map((member) => ({
+        ...member,
+        partners: ensurePartnersArray(member.partners).slice(),
+      })),
+      selectedHorseId,
+      childParents: { ...childParents },
+      selectedChildPartnerId,
+      activeRelationType,
+      fatherSearch,
+      motherSearch,
+      activeTab,
+    }),
     [
       activeRelationType,
-      isFemale,
-      isMale,
-      selectedHorse,
-      setChildParents,
-      setManualHelper,
+      activeTab,
+      childParents,
+      fatherSearch,
+      motherSearch,
+      selectedChildPartnerId,
+      selectedHorseId,
       treeData,
     ]
   );
+  const pushUndoHistory = useCallback(() => {
+    setUndoHistory((prev) => [...prev, createHistoryEntry()]);
+  }, [createHistoryEntry]);
   const defaultHelperMessage = useMemo(() => {
     if (activeRelationType === RELATION_TYPES.HIJO) {
       if (childPartnerOptions.length > 1 && !selectedChildPartner) {
@@ -311,6 +297,7 @@ export function useFamilyTreeState() {
     selectedMother,
   ]);
   const helperMessage = manualHelper || defaultHelperMessage;
+  const canUndo = undoHistory.length > 0;
 
   const isChildReady = selectedFather != null && selectedMother != null;
 
@@ -331,12 +318,92 @@ export function useFamilyTreeState() {
     setSelectedChildPartnerId(partnerId);
   }, []);
 
+  const handleFatherSearchChange = useCallback(
+    (value) => {
+      setFatherSearch(value);
+      setManualHelper("");
+      const normalizedValue = value.trim().toLowerCase();
+      const exactMatch =
+        normalizedValue.length === 0
+          ? null
+          : maleHorseOptions.find(
+              (member) => member.name.trim().toLowerCase() === normalizedValue
+            ) ?? null;
+      setChildParents((prev) => {
+        const nextFatherId = exactMatch?.id ?? null;
+        if (prev.fatherId === nextFatherId) {
+          return prev;
+        }
+        return { ...prev, fatherId: nextFatherId };
+      });
+    },
+    [maleHorseOptions]
+  );
+
+  const handleMotherSearchChange = useCallback(
+    (value) => {
+      setMotherSearch(value);
+      setManualHelper("");
+      const normalizedValue = value.trim().toLowerCase();
+      const exactMatch =
+        normalizedValue.length === 0
+          ? null
+          : femaleHorseOptions.find(
+              (member) => member.name.trim().toLowerCase() === normalizedValue
+            ) ?? null;
+      setChildParents((prev) => {
+        const nextMotherId = exactMatch?.id ?? null;
+        if (prev.motherId === nextMotherId) {
+          return prev;
+        }
+        return { ...prev, motherId: nextMotherId };
+      });
+    },
+    [femaleHorseOptions]
+  );
+
+  const handleFatherSelect = useCallback(
+    (horseId) => {
+      const selectedOption =
+        maleHorseOptions.find((member) => member.id === horseId) ?? null;
+      setChildParents((prev) => {
+        const nextFatherId = selectedOption?.id ?? null;
+        if (prev.fatherId === nextFatherId) {
+          return prev;
+        }
+        return { ...prev, fatherId: nextFatherId };
+      });
+      setFatherSearch(selectedOption?.name ?? "");
+      setManualHelper("");
+    },
+    [maleHorseOptions]
+  );
+
+  const handleMotherSelect = useCallback(
+    (horseId) => {
+      const selectedOption =
+        femaleHorseOptions.find((member) => member.id === horseId) ?? null;
+      setChildParents((prev) => {
+        const nextMotherId = selectedOption?.id ?? null;
+        if (prev.motherId === nextMotherId) {
+          return prev;
+        }
+        return { ...prev, motherId: nextMotherId };
+      });
+      setMotherSearch(selectedOption?.name ?? "");
+      setManualHelper("");
+    },
+    [femaleHorseOptions]
+  );
+
   const handleRelationTypeChange = useCallback(
     (type) => {
       setActiveRelationType(type);
       setManualHelper("");
       if (type !== RELATION_TYPES.HIJO) {
         setChildParents({ fatherId: null, motherId: null });
+        setFatherSearch("");
+        setMotherSearch("");
         setSelectedChildPartnerId(null);
       }
     },
@@ -387,12 +454,15 @@ export function useFamilyTreeState() {
           setManualHelper("El archivo no contiene datos válidos.");
           return;
         }
+        pushUndoHistory();
         setTreeData(sanitized);
         const existingSelection =
           sanitized.find((member) => member.id === selectedHorseId)?.id ?? null;
         const fallbackSelection = sanitized[0]?.id ?? null;
         setSelectedHorseId(existingSelection ?? fallbackSelection);
         setChildParents({ fatherId: null, motherId: null });
+        setFatherSearch("");
+        setMotherSearch("");
         setSelectedChildPartnerId(null);
         setActiveRelationType(RELATION_TYPES.HIJO);
         setManualHelper(`Árbol importado desde ${file.name}.`);
@@ -409,6 +479,7 @@ export function useFamilyTreeState() {
       setActiveRelationType,
       setChildParents,
       setManualHelper,
+      pushUndoHistory,
       setSelectedChildPartnerId,
       setSelectedHorseId,
       setTreeData,
@@ -419,6 +490,25 @@ export function useFamilyTreeState() {
     fileInputRef.current?.click();
   }, [fileInputRef]);
 
+  const handleUndo = useCallback(() => {
+    setUndoHistory((prev) => {
+      if (prev.length === 0) {
+        return prev;
+      }
+      const previousState = prev[prev.length - 1];
+      setTreeData(previousState.treeData);
+      setSelectedHorseId(previousState.selectedHorseId);
+      setChildParents(previousState.childParents);
+      setSelectedChildPartnerId(previousState.selectedChildPartnerId);
+      setActiveRelationType(previousState.activeRelationType);
+      setFatherSearch(previousState.fatherSearch);
+      setMotherSearch(previousState.motherSearch);
+      setActiveTab(previousState.activeTab);
+      setManualHelper("Se deshizo el ultimo cambio.");
+      return prev.slice(0, -1);
+    });
+  }, []);
+
   const handleResetTree = useCallback(() => {
     const defaultData = getDefaultTreeData();
     if (typeof window !== "undefined") {
@@ -426,15 +516,19 @@ export function useFamilyTreeState() {
         window.localStorage.removeItem(STORAGE_KEY);
       } catch {}
     }
+    pushUndoHistory();
     setTreeData(defaultData);
     setSelectedHorseId(targetPersonId);
     setChildParents({ fatherId: null, motherId: null });
+    setFatherSearch("");
+    setMotherSearch("");
     setManualHelper("Árbol restablecido a los valores iniciales.");
     setActiveRelationType(RELATION_TYPES.HIJO);
   }, [
     setActiveRelationType,
     setChildParents,
     setManualHelper,
+    pushUndoHistory,
     setSelectedHorseId,
     setTreeData,
   ]);
@@ -445,6 +539,7 @@ export function useFamilyTreeState() {
       return;
     }
     try {
+      pushUndoHistory();
       const horseId = selectedHorse.id;
       const horseName = selectedHorse.name;
       const updated = removeHorse(treeData, horseId);
@@ -468,6 +563,7 @@ export function useFamilyTreeState() {
       setManualHelper(message);
     }
   }, [
+    pushUndoHistory,
     selectedHorse,
     setChildParents,
     setManualHelper,
@@ -487,6 +583,7 @@ export function useFamilyTreeState() {
       return;
     }
     const nextGender = mapSexToGender(editSex);
+    pushUndoHistory();
     const updatedTree = treeData.map((member) =>
       member.id === selectedHorse.id
         ? { ...member, name: trimmedName, gender: nextGender }
@@ -514,6 +611,7 @@ export function useFamilyTreeState() {
     editName,
     editSex,
     mapSexToGender,
+    pushUndoHistory,
     selectedHorse,
     setChildParents,
     setManualHelper,
@@ -555,6 +653,7 @@ export function useFamilyTreeState() {
               );
               return;
             }
+            pushUndoHistory();
             let updatedMembers = addPartnerToHorse(
               treeData,
               selectedHorse.id,
@@ -601,6 +700,7 @@ export function useFamilyTreeState() {
           }
           return;
         }
+        pushUndoHistory();
         console.log(`[PARTNER CREATION] Adding partner "${name}" to horse "${selectedHorse.name}" (ID: ${selectedHorse.id})`);
         const membersWithPartner = addHorse(treeData, {
           name,
@@ -661,6 +761,7 @@ export function useFamilyTreeState() {
           return;
         }
 
+        pushUndoHistory();
         const updatedMembers = addHorse(treeData, {
           name,
           parent1Id: father,
@@ -690,6 +791,7 @@ export function useFamilyTreeState() {
           return;
         }
 
+        pushUndoHistory();
         const membersWithParent = addHorse(treeData, {
           name,
           parent1Id: null,
@@ -728,6 +830,7 @@ export function useFamilyTreeState() {
       isMale,
       mapSexToGender,
       oppositeGender,
+      pushUndoHistory,
       selectedFather,
       selectedHorse,
       selectedMother,
@@ -741,6 +844,8 @@ export function useFamilyTreeState() {
     setManualHelper("");
     if (activeRelationType === RELATION_TYPES.HIJO) {
       setChildParents({ fatherId: null, motherId: null });
+      setFatherSearch("");
+      setMotherSearch("");
     }
   }, [activeRelationType, setChildParents]);
   const selectedHorseName = selectedHorse?.name ?? "";
@@ -762,6 +867,14 @@ export function useFamilyTreeState() {
     childPartnerOptions,
     selectedChildPartnerId,
     onChildPartnerSelect: handleChildPartnerSelect,
+    fatherSearch,
+    motherSearch,
+    maleHorseOptions,
+    femaleHorseOptions,
+    onFatherSearchChange: handleFatherSearchChange,
+    onMotherSearchChange: handleMotherSearchChange,
+    onFatherSelect: handleFatherSelect,
+    onMotherSelect: handleMotherSelect,
   };
 
   const loaderResult = useFamilyTreeLoader({
@@ -783,9 +896,13 @@ export function useFamilyTreeState() {
     childPartnerOptions,
     selectedChildPartnerId,
     selectedHorse,
+    selectedFather,
+    selectedMother,
     setSelectedChildPartnerId,
     activeRelationType,
     canonicalGender,
+    setFatherSearch,
+    setMotherSearch,
     setEditName,
     setEditSex,
     resizeTimeoutRef,
@@ -802,6 +919,8 @@ export function useFamilyTreeState() {
     handleImportTree,
     handleImportButtonClick,
     handleResetTree,
+    handleUndo,
+    canUndo,
     handleDeleteHorse,
     handleEditHorseSubmit,
     selectedHorseName,

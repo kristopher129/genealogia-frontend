@@ -1,6 +1,6 @@
 import React from "react";
 import { RELATION_TYPES, SEXO } from "./HorseForm";
-import FamilyTreePanel from "./FamilyTreePanel";
+import FamilyTreePanel from "./FamilyTreePanelWithUndo";
 import {
   useFamilyTreeComponentEffects,
   usePersistTreeDataEffect,
@@ -17,6 +17,8 @@ const FamilyTree = () => {
     setSelectedHorseId,
     selectedHorseId,
     setChildParents,
+    selectedFather,
+    selectedMother,
     childPartnerOptions,
     selectedChildPartnerId,
     selectedHorse,
@@ -25,6 +27,8 @@ const FamilyTree = () => {
     canonicalGender,
     setEditName,
     setEditSex,
+    setFatherSearch,
+    setMotherSearch,
     resizeTimeoutRef,
     graphRef,
     setDimensions,
@@ -39,6 +43,8 @@ const FamilyTree = () => {
     handleImportTree,
     handleImportButtonClick,
     handleResetTree,
+    handleUndo,
+    canUndo,
     handleDeleteHorse,
     handleEditHorseSubmit,
     selectedHorseName,
@@ -57,6 +63,8 @@ const FamilyTree = () => {
     setSelectedHorseId,
     selectedHorseId,
     setChildParents,
+    selectedFather,
+    selectedMother,
     childPartnerOptions,
     selectedChildPartnerId,
     selectedHorse,
@@ -67,6 +75,8 @@ const FamilyTree = () => {
     SEXO,
     setEditName,
     setEditSex,
+    setFatherSearch,
+    setMotherSearch,
     resizeTimeoutRef,
     graphRef,
     setDimensions,
@@ -104,6 +114,8 @@ const FamilyTree = () => {
           onImportChange={handleImportTree}
           fileInputRef={fileInputRef}
           onReset={handleResetTree}
+          onUndo={handleUndo}
+          canUndo={canUndo}
         />
 
         <div

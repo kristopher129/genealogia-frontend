@@ -143,6 +143,70 @@ describe("App", () => {
   });
 });
 
+test("permite elegir padre y madre por nombre para agregar una cría", async () => {
+  const customData = [
+    { id: 100, name: "Base", parent1Id: null, parent2Id: null, gender: "man", partners: [] },
+    { id: 101, name: "Alazan", parent1Id: null, parent2Id: null, gender: "man", partners: [] },
+    { id: 102, name: "Aurora", parent1Id: null, parent2Id: null, gender: "woman", partners: [] },
+    { id: 103, name: "Alma", parent1Id: null, parent2Id: null, gender: "woman", partners: [] },
+  ];
+  window.localStorage.setItem("genealogiaTreeData", JSON.stringify(customData));
+  const { container } = render(<App />);
+
+  const agregarTab = await screen.findByRole("tab", { name: /agregar/i });
+  await userEvent.click(agregarTab);
+
+  const fatherInput = screen.getByLabelText(/^Padre$/i);
+  const motherInput = screen.getByLabelText(/^Madre$/i);
+
+  await userEvent.type(fatherInput, "Al");
+  const fatherListId = fatherInput.getAttribute("list");
+  const fatherOptions = Array.from(
+    container.querySelectorAll(`#${fatherListId} option`)
+  ).map((option) => option.value);
+  expect(fatherOptions).toContain("Alazan");
+  expect(fatherOptions).not.toContain("Alma");
+
+  await userEvent.clear(fatherInput);
+  await userEvent.type(fatherInput, "Alazan");
+  await userEvent.type(motherInput, "Aurora");
+
+  const childNameInput = screen.getByPlaceholderText("Nombre del nuevo caballo");
+  await userEvent.clear(childNameInput);
+  await userEvent.type(childNameInput, "Potrillo");
+  await userEvent.click(screen.getByRole("button", { name: /agregar/i }));
+
+  await waitFor(() => {
+    const saved = JSON.parse(window.localStorage.getItem("genealogiaTreeData") || "[]");
+    const createdChild = saved.find((member) => member.name === "Potrillo");
+    expect(createdChild).toBeTruthy();
+    expect(createdChild.parent1Id).toBe(101);
+    expect(createdChild.parent2Id).toBe(102);
+  });
+});
+
+test("deshace el ultimo cambio desde el panel", async () => {
+  render(<App />);
+
+  const agregarTab = await screen.findByRole("tab", { name: /agregar/i });
+  await userEvent.click(agregarTab);
+  const parejaButton = await screen.findByRole("button", { name: /pareja/i });
+  await userEvent.click(parejaButton);
+
+  const nameInput = screen.getByPlaceholderText("Nombre del nuevo caballo");
+  await userEvent.clear(nameInput);
+  await userEvent.type(nameInput, "Camila");
+  await userEvent.click(screen.getByRole("button", { name: /agregar/i }));
+
+  await screen.findByText(/Pareja agregada:\s*Camila/i);
+  await userEvent.click(screen.getByRole("button", { name: /deshacer/i }));
+
+  await waitFor(() => {
+    const saved = JSON.parse(window.localStorage.getItem("genealogiaTreeData") || "[]");
+    expect(saved.some((member) => member.name === "Camila")).toBe(false);
+  });
+});
+
 describe("Horse functions", () => {
   const cloneMembers = () => familyTreeData.map((member) => ({ ...member, partners: Array.isArray(member.partners) ? [...member.partners] : [] }));
 

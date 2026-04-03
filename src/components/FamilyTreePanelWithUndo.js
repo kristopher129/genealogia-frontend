@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import HorseForm, { SEXO } from "./HorseForm";
 import {
   RESET_BUTTON_STYLE,
@@ -23,7 +23,7 @@ const tabs = [
   { id: "export", label: "Exportar/Importar" },
 ];
 
-const FamilyTreePanel = ({
+const FamilyTreePanelWithUndo = ({
   selectedHorseName,
   activeTab,
   onTabChange,
@@ -66,11 +66,30 @@ const FamilyTreePanel = ({
   return (
     <aside className="tree-layout__panel" aria-label="Panel de acciones">
       <div className="tree-layout__section">
-        <h2 className="tree-layout__title">Gestión de caballos</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <h2 className="tree-layout__title">Gestion de caballos</h2>
+          <button
+            type="button"
+            onClick={onUndo}
+            style={undoButtonStyle}
+            disabled={!canUndo}
+            aria-label="Deshacer ultimo cambio"
+            title="Deshacer ultimo cambio"
+          >
+            Deshacer
+          </button>
+        </div>
         <p className="tree-layout__selected" style={{ marginBottom: "1rem" }}>
           Caballo seleccionado: <strong>{displayedHorseName}</strong>
         </p>
-        <div style={TAB_LIST_STYLE} role="tablist" aria-label="Acciones de gestión">
+        <div style={TAB_LIST_STYLE} role="tablist" aria-label="Acciones de gestion">
           {tabs.map(({ id, label }) => {
             const isActive = activeTab === id;
             const style = isActive ? TAB_BUTTON_ACTIVE_STYLE : TAB_BUTTON_STYLE;
@@ -126,10 +145,10 @@ const FamilyTreePanel = ({
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
               <button type="button" onClick={onEditSubmit} style={saveButtonStyle} disabled={isEditDisabled}>
-                💾 Guardar cambios
+                Guardar cambios
               </button>
               <button type="button" onClick={onDeleteHorse} style={deleteButtonStyle} disabled={!hasSelectedHorse}>
-                🗑️ Eliminar caballo
+                Eliminar caballo
               </button>
             </div>
           </div>
@@ -143,11 +162,17 @@ const FamilyTreePanel = ({
           <div role="tabpanel" id="tab-panel-export" aria-labelledby="tab-export">
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <button type="button" onClick={onExport} style={SAVE_BUTTON_STYLE}>
-                ⬇️ Exportar árbol
+                Exportar arbol
               </button>
-              <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={onImportChange} style={{ display: "none" }} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={onImportChange}
+                style={{ display: "none" }}
+              />
               <button type="button" onClick={onImportClick} style={SECONDARY_ACTION_BUTTON_STYLE}>
-                ⬆️ Importar árbol
+                Importar arbol
               </button>
               {manualHelper && <p style={{ fontSize: 13, color: "#475467", marginTop: 4 }}>{manualHelper}</p>}
             </div>
@@ -164,16 +189,16 @@ const FamilyTreePanel = ({
         }}
       >
         <button type="button" onClick={onReset} style={RESET_BUTTON_STYLE}>
-          🔄 Restablecer árbol
+          Restablecer árbol
         </button>
       </div>
     </aside>
   );
 };
 
-export default FamilyTreePanel;
+export default FamilyTreePanelWithUndo;
 
-FamilyTreePanel.propTypes = {
+FamilyTreePanelWithUndo.propTypes = {
   selectedHorseName: PropTypes.string,
   activeTab: PropTypes.string.isRequired,
   onTabChange: PropTypes.func.isRequired,
@@ -192,9 +217,11 @@ FamilyTreePanel.propTypes = {
   onImportChange: PropTypes.func.isRequired,
   fileInputRef: PropTypes.object,
   onReset: PropTypes.func.isRequired,
+  onUndo: PropTypes.func.isRequired,
+  canUndo: PropTypes.bool,
 };
 
-FamilyTreePanel.defaultProps = {
+FamilyTreePanelWithUndo.defaultProps = {
   selectedHorseName: null,
   editName: "",
   editSex: "macho",
@@ -203,4 +230,5 @@ FamilyTreePanel.defaultProps = {
   horseFormProps: {},
   manualHelper: "",
   fileInputRef: null,
+  canUndo: false,
 };
