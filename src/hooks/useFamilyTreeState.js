@@ -21,6 +21,7 @@ export function useFamilyTreeState() {
   const resizeTimeoutRef = useRef(null);
   const [treeData, setTreeData] = useState(() => initializeTreeData());
   const [undoHistory, setUndoHistory] = useState([]);
+  const [redoHistory, setRedoHistory] = useState([]);
   const [selectedHorseId, setSelectedHorseId] = useState(targetPersonId);
   const [activeRelationType, setActiveRelationType] = useState(
     RELATION_TYPES.HIJO
@@ -241,7 +242,18 @@ export function useFamilyTreeState() {
   );
   const pushUndoHistory = useCallback(() => {
     setUndoHistory((prev) => [...prev, createHistoryEntry()]);
+    setRedoHistory([]);
   }, [createHistoryEntry]);
+  const applyHistoryEntry = useCallback((historyEntry) => {
+    setTreeData(historyEntry.treeData);
+    setSelectedHorseId(historyEntry.selectedHorseId);
+    setChildParents(historyEntry.childParents);
+    setSelectedChildPartnerId(historyEntry.selectedChildPartnerId);
+    setActiveRelationType(historyEntry.activeRelationType);
+    setFatherSearch(historyEntry.fatherSearch);
+    setMotherSearch(historyEntry.motherSearch);
+    setActiveTab(historyEntry.activeTab);
+  }, []);
   const defaultHelperMessage = useMemo(() => {
     if (activeRelationType === RELATION_TYPES.HIJO) {
       if (childPartnerOptions.length > 1 && !selectedChildPartner) {
@@ -298,6 +310,7 @@ export function useFamilyTreeState() {
   ]);
   const helperMessage = manualHelper || defaultHelperMessage;
   const canUndo = undoHistory.length > 0;
+  const canRedo = redoHistory.length > 0;
 
   const isChildReady = selectedFather != null && selectedMother != null;
 
@@ -496,18 +509,25 @@ export function useFamilyTreeState() {
         return prev;
       }
       const previousState = prev[prev.length - 1];
-      setTreeData(previousState.treeData);
-      setSelectedHorseId(previousState.selectedHorseId);
-      setChildParents(previousState.childParents);
-      setSelectedChildPartnerId(previousState.selectedChildPartnerId);
-      setActiveRelationType(previousState.activeRelationType);
-      setFatherSearch(previousState.fatherSearch);
-      setMotherSearch(previousState.motherSearch);
-      setActiveTab(previousState.activeTab);
+      setRedoHistory((redoPrev) => [...redoPrev, createHistoryEntry()]);
+      applyHistoryEntry(previousState);
       setManualHelper("Se deshizo el ultimo cambio.");
       return prev.slice(0, -1);
     });
-  }, []);
+  }, [applyHistoryEntry, createHistoryEntry]);
+
+  const handleRedo = useCallback(() => {
+    setRedoHistory((prev) => {
+      if (prev.length === 0) {
+        return prev;
+      }
+      const nextState = prev[prev.length - 1];
+      setUndoHistory((undoPrev) => [...undoPrev, createHistoryEntry()]);
+      applyHistoryEntry(nextState);
+      setManualHelper("Se rehizo el ultimo cambio.");
+      return prev.slice(0, -1);
+    });
+  }, [applyHistoryEntry, createHistoryEntry]);
 
   const handleResetTree = useCallback(() => {
     const defaultData = getDefaultTreeData();
@@ -921,6 +941,8 @@ export function useFamilyTreeState() {
     handleResetTree,
     handleUndo,
     canUndo,
+    handleRedo,
+    canRedo,
     handleDeleteHorse,
     handleEditHorseSubmit,
     selectedHorseName,

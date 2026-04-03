@@ -45,6 +45,8 @@ const FamilyTree = () => {
     handleResetTree,
     handleUndo,
     canUndo,
+    handleRedo,
+    canRedo,
     handleDeleteHorse,
     handleEditHorseSubmit,
     selectedHorseName,
@@ -116,6 +118,8 @@ const FamilyTree = () => {
           onReset={handleResetTree}
           onUndo={handleUndo}
           canUndo={canUndo}
+          onRedo={handleRedo}
+          canRedo={canRedo}
         />
 
         <div

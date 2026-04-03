@@ -44,6 +44,8 @@ const FamilyTreePanelWithUndo = ({
   onReset,
   onUndo,
   canUndo,
+  onRedo,
+  canRedo,
 }) => {
   const displayedHorseName = selectedHorseName ?? "Ninguno";
   const saveButtonStyle = {
@@ -62,6 +64,11 @@ const FamilyTreePanelWithUndo = ({
     opacity: canUndo ? 1 : 0.6,
     cursor: canUndo ? "pointer" : "not-allowed",
   };
+  const redoButtonStyle = {
+    ...UNDO_BUTTON_STYLE,
+    opacity: canRedo ? 1 : 0.6,
+    cursor: canRedo ? "pointer" : "not-allowed",
+  };
 
   return (
     <aside className="tree-layout__panel" aria-label="Panel de acciones">
@@ -75,16 +82,28 @@ const FamilyTreePanelWithUndo = ({
           }}
         >
           <h2 className="tree-layout__title">Gestion de caballos</h2>
-          <button
-            type="button"
-            onClick={onUndo}
-            style={undoButtonStyle}
-            disabled={!canUndo}
-            aria-label="Deshacer ultimo cambio"
-            title="Deshacer ultimo cambio"
-          >
-            Deshacer
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={onUndo}
+              style={undoButtonStyle}
+              disabled={!canUndo}
+              aria-label="Deshacer ultimo cambio"
+              title="Deshacer ultimo cambio"
+            >
+              Deshacer
+            </button>
+            <button
+              type="button"
+              onClick={onRedo}
+              style={redoButtonStyle}
+              disabled={!canRedo}
+              aria-label="Rehacer ultimo cambio"
+              title="Rehacer ultimo cambio"
+            >
+              Rehacer
+            </button>
+          </div>
         </div>
         <p className="tree-layout__selected" style={{ marginBottom: "1rem" }}>
           Caballo seleccionado: <strong>{displayedHorseName}</strong>
@@ -219,6 +238,8 @@ FamilyTreePanelWithUndo.propTypes = {
   onReset: PropTypes.func.isRequired,
   onUndo: PropTypes.func.isRequired,
   canUndo: PropTypes.bool,
+  onRedo: PropTypes.func.isRequired,
+  canRedo: PropTypes.bool,
 };
 
 FamilyTreePanelWithUndo.defaultProps = {
@@ -231,4 +252,5 @@ FamilyTreePanelWithUndo.defaultProps = {
   manualHelper: "",
   fileInputRef: null,
   canUndo: false,
+  canRedo: false,
 };

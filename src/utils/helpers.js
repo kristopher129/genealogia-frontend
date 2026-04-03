@@ -6,6 +6,8 @@ import { seedFamilyTreeData } from "./treeSeed";
 
 export const ensurePartnersArray = (value) => (Array.isArray(value) ? value : []);
 
+const isPlaceholderNode = (node) => Boolean(node?.extra?.isPlaceholder);
+
 export const normalizeNullableId = (value) => {
   if (value == null) {
     return null;
@@ -152,6 +154,15 @@ const fixNodeSpouses = (node, originalDataMap) => {
     }
 
     let spouse = marriage.spouse;
+    if (isPlaceholderNode(spouse)) {
+      return {
+        ...marriage,
+        spouse,
+        children: Array.isArray(marriage.children)
+          ? marriage.children.map((child) => fixNodeSpouses(child, originalDataMap))
+          : [],
+      };
+    }
     const originalSpouseMember = originalDataMap.get(spouse.id);
 
     console.log(`[FIXING] Marriage ${index}: current spouse ${spouse.name} (ID: ${spouse.id}, gender: ${spouse.gender}), used spouses: [${Array.from(usedSpouseIds).join(', ')}]`);
@@ -195,7 +206,9 @@ const fixNodeSpouses = (node, originalDataMap) => {
     }
 
     // Recursively fix children
-    const fixedChildren = marriage.children.map(child => fixNodeSpouses(child, originalDataMap));
+    const fixedChildren = Array.isArray(marriage.children)
+      ? marriage.children.map(child => fixNodeSpouses(child, originalDataMap))
+      : [];
 
     return {
       ...marriage,
@@ -354,6 +367,9 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
           width,
           callbacks: {
             nodeClick: (name, extra, id) => {
+              if (extra?.isPlaceholder) {
+                return;
+              }
               onNodeClickRef.current?.(name, extra, id);
               const svgSelection = d3.select(initialContainer).select("svg");
               const groupSelection = svgSelection.select("g");
@@ -365,22 +381,38 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
               groupSelection.attr("transform", currentTransform.toString());
             },
             textRenderer: (name, extra, textClass) => {
+              if (extra?.isPlaceholder) {
+                return "";
+              }
               const safeName = escapeHtml(name);
               const safeNick = extra?.nickname ? ` (${escapeHtml(extra.nickname)})` : "";
               const displayName = `${safeName}${safeNick}`;
               return `<p align='center' class='${textClass}' role="heading" aria-level="3">${displayName}</p>`;
             },
-            nodeRenderer: (name, x, y, nodeHeight, nodeWidth, extra, id, nodeClass, textClass, textRenderer) => `
-              <div 
-                class="${nodeClass}" 
-                id="node${id}"
-                role="button"
-                tabindex="0"
-                aria-label="Miembro familiar: ${escapeHtml(name)}"
-              >
-                ${textRenderer(name, extra, textClass)}
-              </div>
-            `,
+            nodeRenderer: (name, x, y, nodeHeight, nodeWidth, extra, id, nodeClass, textClass, textRenderer) => {
+              if (extra?.isPlaceholder) {
+                return `
+                  <div
+                    class="${nodeClass}"
+                    id="node${id}"
+                    aria-hidden="true"
+                    style="width:1px;height:1px;opacity:0;pointer-events:none;border:none;background:transparent;box-shadow:none;"
+                  ></div>
+                `;
+              }
+
+              return `
+                <div 
+                  class="${nodeClass}" 
+                  id="node${id}"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Miembro familiar: ${escapeHtml(name)}"
+                >
+                  ${textRenderer(name, extra, textClass)}
+                </div>
+              `;
+            },
           },
         });
 

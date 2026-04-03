@@ -210,6 +210,29 @@ test("deshace el ultimo cambio desde el panel", async () => {
   });
 });
 
+test("rehace el ultimo cambio deshecho desde el panel", async () => {
+  render(<App />);
+
+  const agregarTab = await screen.findByRole("tab", { name: /agregar/i });
+  await userEvent.click(agregarTab);
+  const parejaButton = await screen.findByRole("button", { name: /pareja/i });
+  await userEvent.click(parejaButton);
+
+  const nameInput = screen.getByPlaceholderText("Nombre del nuevo caballo");
+  await userEvent.clear(nameInput);
+  await userEvent.type(nameInput, "Camila");
+  await userEvent.click(screen.getByRole("button", { name: /agregar/i }));
+
+  await screen.findByText(/Pareja agregada:\s*Camila/i);
+  await userEvent.click(screen.getByRole("button", { name: /deshacer/i }));
+  await userEvent.click(screen.getByRole("button", { name: /rehacer/i }));
+
+  await waitFor(() => {
+    const saved = JSON.parse(window.localStorage.getItem("genealogiaTreeData") || "[]");
+    expect(saved.some((member) => member.name === "Camila")).toBe(true);
+  });
+});
+
 describe("Horse functions", () => {
   const cloneMembers = () => familyTreeData.map((member) => ({ ...member, partners: Array.isArray(member.partners) ? [...member.partners] : [] }));
 

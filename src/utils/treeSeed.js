@@ -1,24 +1,37 @@
-const cloneMember = (member) => ({ ...member });
+let placeholderSpouseSequence = -1;
 
-const getWithParentIds = (data, id) => {
+const cloneMember = (member) => (member ? { ...member } : null);
+
+const getWithParentIds = (data, id, { required = true } = {}) => {
   const member = data.find((item) => item.id === id);
   if (!member) {
+    if (!required) {
+      return null;
+    }
     throw new Error(`Member with id (${id}) was not found`);
   }
   return cloneMember(member);
 };
 
-const getWithoutParentIds = (data, id) => {
-  const member = getWithParentIds(data, id);
+const getWithoutParentIds = (data, id, options) => {
+  const member = getWithParentIds(data, id, options);
+  if (!member) {
+    return null;
+  }
   member.parent1Id = null;
   member.parent2Id = null;
   return member;
 };
 
 const getMembers = (data, ids, { preserveParentIds }) =>
-  ids.map((id) =>
-    preserveParentIds ? getWithParentIds(data, id) : getWithoutParentIds(data, id)
-  );
+  ids
+    .filter((id) => id != null)
+    .map((id) =>
+      preserveParentIds
+        ? getWithParentIds(data, id, { required: false })
+        : getWithoutParentIds(data, id, { required: false })
+    )
+    .filter(Boolean);
 
 const getChildren = (data, ...parents) => {
   const childIds = data
@@ -142,14 +155,34 @@ const getRelatives = (data, targetId) => {
   return members;
 };
 
-const createTreeNode = (member, options) => ({
-  id: member.id,
-  name: member?.name ?? "",
-  class: options?.class?.(member) ?? "",
-  textClass: options?.textClass?.(member) ?? "",
-  depthOffset: member.depthOffset ?? -1,
+const createTreeNode = (member, options) => {
+  if (!member) {
+    return null;
+  }
+
+  return {
+    id: member.id,
+    name: member.name ?? "",
+    class: options?.class?.(member) ?? "",
+    textClass: options?.textClass?.(member) ?? "",
+    depthOffset: member.depthOffset ?? -1,
+    marriages: [],
+    extra: options?.extra?.(member) ?? {},
+  };
+};
+
+const createPlaceholderSpouse = (member, options) => ({
+  id: placeholderSpouseSequence--,
+  name: "",
+  class: "placeholder-spouse",
+  textClass: "placeholder-spouse-text",
+  depthOffset: member?.depthOffset ?? -1,
   marriages: [],
-  extra: options?.extra?.(member) ?? {},
+  extra: {
+    ...(options?.extra?.(member) ?? {}),
+    isPlaceholder: true,
+    originalId: null,
+  },
 });
 
 const createMarriage = () => ({
@@ -211,7 +244,14 @@ const combineIntoMarriages = (data, options) => {
   while (parentGroups.length > 0) {
     const currentParentGroup = parentGroups[0];
     const nodeId = currentParentGroup[0];
-    const node = createTreeNode(getWithParentIds(data, nodeId), options);
+    const nodeMember = getWithParentIds(data, nodeId, { required: false });
+    const node = createTreeNode(nodeMember, options);
+    if (!nodeMember || !node) {
+      parentGroups = parentGroups.filter(
+        (group) => JSON.stringify(group) !== JSON.stringify(currentParentGroup)
+      );
+      continue;
+    }
     const nodeMarriages = parentGroups.filter((group) => group.includes(nodeId));
     const processedGroups = new Set();
 
@@ -220,8 +260,15 @@ const combineIntoMarriages = (data, options) => {
       const marriage = createMarriage();
       const spouseId = marriedCouple[1];
 
-      if (spouseId !== undefined) {
-        marriage.spouse = createTreeNode(getWithParentIds(data, spouseId), options);
+      if (spouseId != null) {
+        marriage.spouse = createTreeNode(
+          getWithParentIds(data, spouseId, { required: false }),
+          options
+        );
+      }
+
+      if (!marriage.spouse) {
+        marriage.spouse = createPlaceholderSpouse(nodeMember, options);
       }
 
       marriage.children = data
@@ -240,7 +287,8 @@ const combineIntoMarriages = (data, options) => {
           }
           return false;
         })
-        .map((child) => createTreeNode(child, options));
+        .map((child) => createTreeNode(child, options))
+        .filter(Boolean);
 
       node.marriages.push(marriage);
     });
@@ -284,6 +332,7 @@ const coalesce = (data) => {
 };
 
 export const seedFamilyTreeData = (data, targetId, options) => {
+  placeholderSpouseSequence = -1;
   const members = getRelatives(data, targetId);
   const marriages = combineIntoMarriages(members, options);
   return coalesce(marriages);

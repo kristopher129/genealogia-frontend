@@ -62,4 +62,22 @@ describe("seedFamilyTreeData", () => {
     );
     expect(siblingBInsideParents).toBeTruthy();
   });
+  test("crea un placeholder invisible cuando queda un solo progenitor tras eliminar al otro", () => {
+    const data = [
+      { id: 0, name: "Padre", parent1Id: null, parent2Id: null, gender: "man", partners: [] },
+      { id: 2, name: "Hijo", parent1Id: 0, parent2Id: null, gender: "man", partners: [] },
+    ];
+
+    const seeded = seedFamilyTreeData(data, 0, {
+      class: (member) => member.gender,
+      textClass: () => "",
+      extra: (member) => ({ originalId: member.id }),
+    });
+
+    expect(seeded).toHaveLength(1);
+    expect(seeded[0].marriages).toHaveLength(1);
+    expect(seeded[0].marriages[0].spouse).toBeTruthy();
+    expect(seeded[0].marriages[0].spouse.extra.isPlaceholder).toBe(true);
+    expect(seeded[0].marriages[0].children.map((child) => child.id)).toContain(2);
+  });
 });
