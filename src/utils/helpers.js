@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { familyTreeData } from "../data/familyTreeData";
 import { loadTreeLibraries } from "../utils/globalLibs";
 import {  STORAGE_KEY} from "../components/familyTreeConstants"
+import { seedFamilyTreeData } from "./treeSeed";
 
 export const ensurePartnersArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -287,7 +288,7 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
         console.log(`[SEEDING] Starting seeding with targetId: ${targetId}`);
         console.log(`[SEEDING] dataCopy members:`, dataCopy.map(m => ({id: m.id, name: m.name})));
 
-        const seededData = dSeeder.seed(dataCopy, targetId, options);
+        const seededData = seedFamilyTreeData(dataCopy, targetId, options);
 
         const printTree = (node, depth = 0) => {
           const indent = '  '.repeat(depth);

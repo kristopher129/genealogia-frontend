@@ -1,6 +1,9 @@
 // Use the test API from globalLibs to inject minimal d3/dTree/dSeeder shims.
 const { __setTestLibraries, __resetTestLibraries } = require("./utils/globalLibs");
-let seedMock;
+let mockSeedMock;
+jest.mock("./utils/treeSeed", () => ({
+  seedFamilyTreeData: (...args) => mockSeedMock(...args),
+}));
 const { render, screen, waitFor } = require("@testing-library/react");
 const userEventModule = require("@testing-library/user-event");
 const userEvent = userEventModule.default || userEventModule;
@@ -14,7 +17,7 @@ describe("App", () => {
   beforeEach(() => {
     window.localStorage.clear();
     // create a fresh seed mock and inject minimal shims
-    seedMock = jest.fn((data) => data);
+    mockSeedMock = jest.fn((data) => data);
     const nodeStub = {
       node: () => ({}),
       empty: () => false,
@@ -31,7 +34,7 @@ describe("App", () => {
       zoomIdentity: { matrix: () => ({ toString: () => "" }) },
     };
     const dTree = { init: (seededData, opts) => ({ destroy: () => {}, resetZoom: () => {}, getTransform: () => null, setTransform: () => {} }) };
-    const dSeeder = { seed: (data) => { seedMock(data); return data; } };
+    const dSeeder = { seed: (data) => data };
     __setTestLibraries({ d3, dTree, dSeeder });
   });
 
@@ -56,8 +59,8 @@ describe("App", () => {
     window.localStorage.setItem("genealogiaTreeData", JSON.stringify(stored));
     render(<App />);
 
-  await waitFor(() => expect(seedMock).toHaveBeenCalled());
-    const latestSeedCall = seedMock.mock.calls[seedMock.mock.calls.length - 1];
+  await waitFor(() => expect(mockSeedMock).toHaveBeenCalled());
+    const latestSeedCall = mockSeedMock.mock.calls[mockSeedMock.mock.calls.length - 1];
     const seededData = latestSeedCall[0];
     const persisted = seededData.find((member) => member.name === "Persistente");
     const persistedPartner = seededData.find((member) => member.name === "Carolina");
@@ -76,11 +79,11 @@ describe("App", () => {
   const nameInput = screen.getByPlaceholderText("Nombre del nuevo caballo");
   await userEvent.clear(nameInput);
   await userEvent.type(nameInput, "Camila");
-    const initialCalls = seedMock.mock.calls.length;
+    const initialCalls = mockSeedMock.mock.calls.length;
   await userEvent.click(screen.getByRole("button", { name: /agregar/i }));
 
-    await waitFor(() => expect(seedMock.mock.calls.length).toBeGreaterThan(initialCalls));
-    const latestSeedCall = seedMock.mock.calls[seedMock.mock.calls.length - 1];
+    await waitFor(() => expect(mockSeedMock.mock.calls.length).toBeGreaterThan(initialCalls));
+    const latestSeedCall = mockSeedMock.mock.calls[mockSeedMock.mock.calls.length - 1];
     const seededData = latestSeedCall[0];
     const createdPartner = seededData.find((member) => member.name === "Camila");
     const selectedHorse = seededData.find((member) => member.id === 0);
@@ -93,7 +96,7 @@ describe("App", () => {
   // Ver `.github/copilot-instructions.md` -> "Notas sobre tests — búsqueda de mensajes de UI" para
   // la explicación completa y recomendaciones sobre tests menos frágiles.
   await screen.findByText(/Pareja agregada:\s*Camila/i);
-  await waitFor(() => expect(seedMock).toHaveBeenCalled());
+  await waitFor(() => expect(mockSeedMock).toHaveBeenCalled());
     await waitFor(() => {
       const saved = JSON.parse(window.localStorage.getItem("genealogiaTreeData"));
       const savedPartner = saved?.find((member) => member.name === "Camila");
@@ -109,7 +112,7 @@ describe("App", () => {
     window.localStorage.setItem("genealogiaTreeData", JSON.stringify(initial));
   render(<App />);
 
-    await waitFor(() => expect(seedMock).toHaveBeenCalled());
+    await waitFor(() => expect(mockSeedMock).toHaveBeenCalled());
   const resetButton = await screen.findByRole("button", { name: /restablecer árbol/i });
   await userEvent.click(resetButton);
     await waitFor(() => {

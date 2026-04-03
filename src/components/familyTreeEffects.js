@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { seedFamilyTreeData } from "../utils/treeSeed";
 
 // Escape user-provided strings to avoid injecting raw HTML into node renderers.
 const escapeHtml = (unsafe) => {
@@ -86,7 +87,7 @@ export const useFamilyTreeLoaderEffects = ({
           console.debug("📊 Datos enviados al dSeeder.seed:", dataCopy);
         }
 
-        const seededData = dSeeder.seed(dataCopy, targetId, options);
+        const seededData = seedFamilyTreeData(dataCopy, targetId, options);
 
   const preservedSvg = d3.select(initialContainer).select("svg");
   const preservedGroup = preservedSvg.select("g");
