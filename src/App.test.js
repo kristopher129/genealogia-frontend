@@ -11,6 +11,7 @@ const horseFuncs = require("./utils/HorseFunctions");
 const addHorse = horseFuncs.default || horseFuncs;
 const addPartnerToHorse = horseFuncs.addPartnerToHorse;
 const { familyTreeData } = require("./data/familyTreeData");
+const { resolveActiveTargetId } = require("./hooks/useFamilyTreeState");
 const App = require("./App").default || require("./App");
 
 describe("App", () => {
@@ -231,6 +232,27 @@ test("rehace el ultimo cambio deshecho desde el panel", async () => {
     const saved = JSON.parse(window.localStorage.getItem("genealogiaTreeData") || "[]");
     expect(saved.some((member) => member.name === "Camila")).toBe(true);
   });
+});
+
+test("usa un objetivo valido cuando el caballo seleccionado ya no existe", () => {
+  const treeData = [
+    { id: 1, name: "Iliana" },
+    { id: 2, name: "James" },
+  ];
+
+  expect(resolveActiveTargetId(treeData, 0)).toBe(1);
+  expect(resolveActiveTargetId(treeData, 2)).toBe(2);
+  expect(resolveActiveTargetId([], 0)).toBeNull();
+});
+
+test("mantiene el árbol anclado al caballo raíz aunque haya otro seleccionado", () => {
+  const treeData = [
+    { id: 0, name: "Niclas" },
+    { id: 1, name: "Iliana" },
+    { id: 2, name: "James" },
+  ];
+
+  expect(resolveActiveTargetId(treeData, 2)).toBe(0);
 });
 
 describe("Horse functions", () => {

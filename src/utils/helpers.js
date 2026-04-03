@@ -86,11 +86,10 @@ export const initializeTreeData = () => {
     }
     const parsed = JSON.parse(raw);
     const sanitized = sanitizeStoredMembers(parsed);
-    const merged = mergeWithDefaultMembers(sanitized);
-    if (merged.length === 0) {
+    if (sanitized.length === 0) {
       return getDefaultTreeData();
     }
-    return merged;
+    return sanitized;
   } catch (error) {
     return getDefaultTreeData();
   }

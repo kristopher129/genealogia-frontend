@@ -16,6 +16,22 @@ import addHorse, {
 } from "../utils/HorseFunctions";
 import { STORAGE_KEY } from "../components/familyTreeConstants";
 
+export const resolveActiveTargetId = (treeData, selectedHorseId, preferredRootId = targetPersonId) => {
+  if (
+    preferredRootId != null &&
+    treeData.some((member) => member.id === preferredRootId)
+  ) {
+    return preferredRootId;
+  }
+  if (
+    selectedHorseId != null &&
+    treeData.some((member) => member.id === selectedHorseId)
+  ) {
+    return selectedHorseId;
+  }
+  return treeData[0]?.id ?? null;
+};
+
 export function useFamilyTreeState() {
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const resizeTimeoutRef = useRef(null);
@@ -49,6 +65,10 @@ export function useFamilyTreeState() {
   const selectedHorse = useMemo(
     () => treeData.find((member) => member.id === selectedHorseId) ?? null,
     [treeData, selectedHorseId]
+  );
+  const activeTargetId = useMemo(
+    () => resolveActiveTargetId(treeData, selectedHorseId, targetPersonId),
+    [selectedHorseId, treeData]
   );
   const selectedFather = useMemo(
     () =>
@@ -899,7 +919,7 @@ export function useFamilyTreeState() {
 
   const loaderResult = useFamilyTreeLoader({
     data: treeData,
-    targetId: targetPersonId,
+    targetId: activeTargetId,
     options: dSeederOptions,
     dimensions,
     onNodeClick: handleNodeClick,

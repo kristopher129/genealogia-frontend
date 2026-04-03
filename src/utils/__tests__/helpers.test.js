@@ -1,4 +1,4 @@
-import { sanitizeStoredMembers } from '../helpers';
+import { initializeTreeData, sanitizeStoredMembers } from '../helpers';
 import { familyTreeData } from '../../data/familyTreeData';
 
 describe('sanitizeStoredMembers (conservative policy)', () => {
@@ -36,14 +36,25 @@ describe('sanitizeStoredMembers (conservative policy)', () => {
     expect(out[0]).toHaveProperty('id');
   });
 
-  test('mergeWithDefaultMembers merges stored members with defaults and combines partners', () => {
-    const { mergeWithDefaultMembers } = require('../helpers');
-    const stored = [{ id: 0, name: 'Niclas Modified', partners: [99] }];
-    const merged = mergeWithDefaultMembers(stored);
-    const niclas = merged.find((m) => m.id === 0);
-    expect(niclas).toBeTruthy();
-    // default partners for id 0 include 1 (from seed); merged should contain both 1 and 99
-    expect(Array.isArray(niclas.partners)).toBe(true);
-    expect(niclas.partners).toEqual(expect.arrayContaining([1, 99]));
+  test('initializeTreeData usa los datos guardados sin reinyectar el árbol por defecto', () => {
+    window.localStorage.setItem(
+      'genealogiaTreeData',
+      JSON.stringify([{ id: 99, name: 'Solo Importado', parent1Id: null, parent2Id: null, gender: 'man', partners: [] }])
+    );
+
+    const loaded = initializeTreeData();
+
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].id).toBe(99);
+    expect(loaded[0].name).toBe('Solo Importado');
+  });
+
+  test('initializeTreeData recupera borrados persistidos al recargar', () => {
+    const withoutRoot = sanitizeStoredMembers(familyTreeData).filter((member) => member.id !== 0);
+    window.localStorage.setItem('genealogiaTreeData', JSON.stringify(withoutRoot));
+
+    const loaded = initializeTreeData();
+
+    expect(loaded.some((member) => member.id === 0)).toBe(false);
   });
 });
