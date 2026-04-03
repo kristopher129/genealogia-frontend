@@ -32,6 +32,44 @@ export const resolveActiveTargetId = (treeData, selectedHorseId, preferredRootId
   return treeData[0]?.id ?? null;
 };
 
+export const getGenderEditConflictMessage = ({
+  treeData,
+  selectedHorse,
+  nextGender,
+  canonicalGender,
+}) => {
+  if (!selectedHorse) {
+    return null;
+  }
+
+  const childrenAsFather = treeData.filter(
+    (member) => member.parent1Id === selectedHorse.id
+  );
+  if (childrenAsFather.length > 0 && nextGender !== "man") {
+    return `${selectedHorse.name} figura como padre de otras crías y no puede cambiarse a hembra.`;
+  }
+
+  const childrenAsMother = treeData.filter(
+    (member) => member.parent2Id === selectedHorse.id
+  );
+  if (childrenAsMother.length > 0 && nextGender !== "woman") {
+    return `${selectedHorse.name} figura como madre de otras crías y no puede cambiarse a macho.`;
+  }
+
+  const incompatiblePartner = ensurePartnersArray(selectedHorse.partners)
+    .map((partnerId) => treeData.find((member) => member.id === partnerId) ?? null)
+    .find((partner) => {
+      const partnerGender = canonicalGender(partner?.gender);
+      return partnerGender != null && partnerGender === nextGender;
+    });
+
+  if (incompatiblePartner) {
+    return `${selectedHorse.name} no puede cambiar de sexo mientras siga registrado como pareja de ${incompatiblePartner.name}.`;
+  }
+
+  return null;
+};
+
 export function useFamilyTreeState() {
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const resizeTimeoutRef = useRef(null);
@@ -623,6 +661,16 @@ export function useFamilyTreeState() {
       return;
     }
     const nextGender = mapSexToGender(editSex);
+    const genderConflictMessage = getGenderEditConflictMessage({
+      treeData,
+      selectedHorse,
+      nextGender,
+      canonicalGender,
+    });
+    if (genderConflictMessage) {
+      setManualHelper(genderConflictMessage);
+      return;
+    }
     pushUndoHistory();
     const updatedTree = treeData.map((member) =>
       member.id === selectedHorse.id
@@ -650,6 +698,8 @@ export function useFamilyTreeState() {
   }, [
     editName,
     editSex,
+    canonicalGender,
+    ensurePartnersArray,
     mapSexToGender,
     pushUndoHistory,
     selectedHorse,
@@ -741,7 +791,6 @@ export function useFamilyTreeState() {
           return;
         }
         pushUndoHistory();
-        console.log(`[PARTNER CREATION] Adding partner "${name}" to horse "${selectedHorse.name}" (ID: ${selectedHorse.id})`);
         const membersWithPartner = addHorse(treeData, {
           name,
           parent1Id: null,
@@ -755,7 +804,6 @@ export function useFamilyTreeState() {
           setManualHelper("No se pudo registrar la nueva pareja.");
           return;
         }
-        console.log(`[PARTNER CREATION] Created partner with ID: ${createdPartner.id}`);
         const synchronized = synchronizePartners(
           membersWithPartner,
           selectedHorse.id,
@@ -771,8 +819,6 @@ export function useFamilyTreeState() {
           selectedHorse.id,
           createdPartner.id
         );
-        console.log(`[TREE UPDATE] Setting treeData with ${withChild.length} members`);
-        console.log(`[TREE UPDATE] Members:`, withChild.map(m => ({id: m.id, name: m.name})));
         setTreeData(withChild);
         setSelectedHorseId(selectedHorse.id);
         const helperText = childName

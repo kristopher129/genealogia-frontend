@@ -1,6 +1,5 @@
 const ensureId = (members, candidateId) => {
   if (candidateId != null) {
-    console.log(`[ID ASSIGNMENT] Using provided candidateId: ${candidateId}`);
     return candidateId;
   }
 
@@ -13,7 +12,6 @@ const ensureId = (members, candidateId) => {
   }, -1);
 
   const newId = maxId + 1;
-  console.log(`[ID ASSIGNMENT] Calculated new ID: ${newId} (max existing: ${maxId})`);
   return newId;
 };
 
@@ -59,8 +57,6 @@ const addHorse = (members, data) => {
     throw new Error("La lista de caballos debe ser un arreglo");
   }
   const horse = buildHorse(members, data);
-  console.log(`[HORSE CREATION] Created horse: ID=${horse.id}, name="${horse.name}", gender="${horse.gender}"`);
-  console.log(`[HORSE CREATION] Existing members:`, members.map(m => ({id: m.id, name: m.name})));
   return [...members, horse];
 };
 

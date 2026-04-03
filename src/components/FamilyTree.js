@@ -4,7 +4,7 @@ import FamilyTreePanel from "./FamilyTreePanelWithUndo";
 import {
   useFamilyTreeComponentEffects,
   usePersistTreeDataEffect,
-} from "./familyTreeEffects";
+} from "./familyTreeComponentEffects";
 import { sanitizeStoredMembers } from "../utils/helpers";
 import { STORAGE_KEY } from "./familyTreeConstants";
 import "../styles/dtree.css";
