@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { familyTreeData } from "../data/familyTreeData";
 import { loadTreeLibraries } from "../utils/globalLibs";
-import {  STORAGE_KEY} from "../components/familyTreeConstants"
+import { STORAGE_KEY, treeNodeHeightSeparation } from "../components/familyTreeConstants";
 import { seedFamilyTreeData } from "./treeSeed";
 
 export const ensurePartnersArray = (value) => (Array.isArray(value) ? value : []);
@@ -322,6 +322,7 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
           height,
           width,
           callbacks: {
+            nodeHeightSeperation: treeNodeHeightSeparation,
             nodeClick: (name, extra, id) => {
               if (extra?.isPlaceholder) {
                 return;

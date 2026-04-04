@@ -126,3 +126,14 @@ export const UNDO_BUTTON_STYLE = {
   cursor: "pointer",
   alignSelf: "flex-start",
 };
+
+/** Pixels added to max node height between tree levels (d3-dtree default is 25). */
+export const TREE_LEVEL_VERTICAL_GAP_PX = 10;
+
+/**
+ * d3-dtree callback: vertical distance between generations.
+ * Name matches library spelling (nodeHeightSeperation).
+ */
+export function treeNodeHeightSeparation(_nodeWidth, nodeMaxHeight) {
+  return nodeMaxHeight + TREE_LEVEL_VERTICAL_GAP_PX;
+}

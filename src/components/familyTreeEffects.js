@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { treeNodeHeightSeparation } from "./familyTreeConstants";
 import { seedFamilyTreeData } from "../utils/treeSeed";
 export {
   useFamilyTreeComponentEffects,
@@ -110,6 +111,7 @@ export const useFamilyTreeLoaderEffects = ({
           height,
           width,
           callbacks: {
+            nodeHeightSeperation: treeNodeHeightSeparation,
             nodeClick: (name, extra, id) => {
               onNodeClickRef.current?.(name, extra, id);
               const svgSelection = d3.select(initialContainer).select("svg");
