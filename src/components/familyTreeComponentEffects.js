@@ -35,6 +35,9 @@ export const useFamilyTreeComponentEffects = ({
   SEXO,
   setEditName,
   setEditSex,
+  setEditCountry,
+  setEditBirthYear,
+  setEditDeathYear,
   setFatherSearch,
   setMotherSearch,
   resizeTimeoutRef,
@@ -120,9 +123,15 @@ export const useFamilyTreeComponentEffects = ({
     if (!selectedHorse) {
       setEditName("");
       setEditSex(SEXO.MACHO);
+      setEditCountry("");
+      setEditBirthYear("");
+      setEditDeathYear("");
       return;
     }
     setEditName(selectedHorse.name ?? "");
+    setEditCountry(selectedHorse.country ?? "");
+    setEditBirthYear(selectedHorse.birthYear != null ? String(selectedHorse.birthYear) : "");
+    setEditDeathYear(selectedHorse.deathYear != null ? String(selectedHorse.deathYear) : "");
     const canonical = canonicalGender(selectedHorse.gender);
     if (canonical === "woman") {
       setEditSex(SEXO.HEMBRA);
@@ -134,6 +143,9 @@ export const useFamilyTreeComponentEffects = ({
     canonicalGender,
     setEditName,
     setEditSex,
+    setEditCountry,
+    setEditBirthYear,
+    setEditDeathYear,
     SEXO.HEMBRA,
     SEXO.MACHO,
   ]);

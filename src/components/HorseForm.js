@@ -153,6 +153,9 @@ const HorseForm = ({
   const [relationType, setRelationType] = useState(RELATION_TYPES.HIJO);
   const [formName, setFormName] = useState("");
   const [formSex, setFormSex] = useState(SEXO.MACHO);
+  const [formCountry, setFormCountry] = useState("");
+  const [formBirthYear, setFormBirthYear] = useState("");
+  const [formDeathYear, setFormDeathYear] = useState("");
   const datalistBaseId = useId();
 
   useEffect(() => {
@@ -194,13 +197,22 @@ const HorseForm = ({
       name: trimmedName,
       sex: relationType === RELATION_TYPES.PADRE && lockedParentSex ? lockedParentSex : formSex,
       relationType,
+      country: formCountry.trim() || null,
+      birthYear: formBirthYear ? Number(formBirthYear) : null,
+      deathYear: formDeathYear ? Number(formDeathYear) : null,
     };
     onSubmit?.(payload);
     setFormName("");
+    setFormCountry("");
+    setFormBirthYear("");
+    setFormDeathYear("");
   };
 
   const handleCancel = () => {
     setFormName("");
+    setFormCountry("");
+    setFormBirthYear("");
+    setFormDeathYear("");
     onCancel?.();
   };
 
@@ -298,6 +310,44 @@ const HorseForm = ({
           </select>
         </div>
       )}
+
+      <div>
+        <label style={FORM_STYLES.label}>País (Siglas)</label>
+        <input
+          type="text"
+          placeholder="Ej: GBR, USA, ITY"
+          value={formCountry}
+          onChange={(e) => setFormCountry(e.target.value)}
+          onKeyDown={handleKeyDown}
+          style={FORM_STYLES.input}
+          maxLength={3}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={FORM_STYLES.label}>Año Nac.</label>
+          <input
+            type="number"
+            placeholder="Ej: 1940"
+            value={formBirthYear}
+            onChange={(e) => setFormBirthYear(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={FORM_STYLES.input}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={FORM_STYLES.label}>Año Fall.</label>
+          <input
+            type="number"
+            placeholder="Ej: 1960"
+            value={formDeathYear}
+            onChange={(e) => setFormDeathYear(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={FORM_STYLES.input}
+          />
+        </div>
+      </div>
 
       <div style={FORM_STYLES.description}>
         Caballo seleccionado: <strong>{selectedHorseName || "Ninguno"}</strong>

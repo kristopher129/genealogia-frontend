@@ -31,6 +31,12 @@ const FamilyTreePanelWithUndo = ({
   onEditNameChange,
   editSex,
   onEditSexChange,
+  editCountry,
+  onEditCountryChange,
+  editBirthYear,
+  onEditBirthYearChange,
+  editDeathYear,
+  onEditDeathYearChange,
   isEditDisabled,
   onEditSubmit,
   onDeleteHorse,
@@ -162,6 +168,51 @@ const FamilyTreePanelWithUndo = ({
                 <option value={SEXO.HEMBRA}>Hembra</option>
               </select>
             </div>
+            <div style={{ ...EDIT_FIELD_CONTAINER_STYLE, marginTop: 12 }}>
+              <label style={EDIT_LABEL_STYLE} htmlFor="edit-country">
+                País (Siglas)
+              </label>
+              <input
+                id="edit-country"
+                type="text"
+                value={editCountry}
+                onChange={(event) => onEditCountryChange(event.target.value)}
+                style={EDIT_INPUT_STYLE}
+                maxLength={3}
+                placeholder="Ej: GBR, USA, ITY"
+                disabled={!hasSelectedHorse}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
+              <div style={{ ...EDIT_FIELD_CONTAINER_STYLE, flex: 1 }}>
+                <label style={EDIT_LABEL_STYLE} htmlFor="edit-birth">
+                  Año Nac.
+                </label>
+                <input
+                  id="edit-birth"
+                  type="number"
+                  value={editBirthYear}
+                  onChange={(event) => onEditBirthYearChange(event.target.value)}
+                  style={EDIT_INPUT_STYLE}
+                  placeholder="Ej: 1935"
+                  disabled={!hasSelectedHorse}
+                />
+              </div>
+              <div style={{ ...EDIT_FIELD_CONTAINER_STYLE, flex: 1 }}>
+                <label style={EDIT_LABEL_STYLE} htmlFor="edit-death">
+                  Año Fall.
+                </label>
+                <input
+                  id="edit-death"
+                  type="number"
+                  value={editDeathYear}
+                  onChange={(event) => onEditDeathYearChange(event.target.value)}
+                  style={EDIT_INPUT_STYLE}
+                  placeholder="Ej: 1957"
+                  disabled={!hasSelectedHorse}
+                />
+              </div>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
               <button type="button" onClick={onEditSubmit} style={saveButtonStyle} disabled={isEditDisabled}>
                 Guardar cambios
@@ -225,6 +276,12 @@ FamilyTreePanelWithUndo.propTypes = {
   onEditNameChange: PropTypes.func.isRequired,
   editSex: PropTypes.string,
   onEditSexChange: PropTypes.func.isRequired,
+  editCountry: PropTypes.string,
+  onEditCountryChange: PropTypes.func.isRequired,
+  editBirthYear: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onEditBirthYearChange: PropTypes.func.isRequired,
+  editDeathYear: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onEditDeathYearChange: PropTypes.func.isRequired,
   isEditDisabled: PropTypes.bool,
   onEditSubmit: PropTypes.func.isRequired,
   onDeleteHorse: PropTypes.func.isRequired,
@@ -246,6 +303,9 @@ FamilyTreePanelWithUndo.defaultProps = {
   selectedHorseName: null,
   editName: "",
   editSex: "macho",
+  editCountry: "",
+  editBirthYear: "",
+  editDeathYear: "",
   isEditDisabled: false,
   hasSelectedHorse: false,
   horseFormProps: {},

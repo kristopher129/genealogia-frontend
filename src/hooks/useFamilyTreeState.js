@@ -51,6 +51,9 @@ export function useFamilyTreeState() {
   const [selectedChildPartnerId, setSelectedChildPartnerId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editSex, setEditSex] = useState(SEXO.MACHO);
+  const [editCountry, setEditCountry] = useState("");
+  const [editBirthYear, setEditBirthYear] = useState("");
+  const [editDeathYear, setEditDeathYear] = useState("");
   const [activeTab, setActiveTab] = useState("edit");
   const [manualHelper, setManualHelper] = useState("");
   const fileInputRef = useRef(null);
@@ -626,7 +629,14 @@ export function useFamilyTreeState() {
     pushUndoHistory();
     const updatedTree = treeData.map((member) =>
       member.id === selectedHorse.id
-        ? { ...member, name: trimmedName, gender: nextGender }
+        ? {
+            ...member,
+            name: trimmedName,
+            gender: nextGender,
+            country: editCountry.trim() || null,
+            birthYear: editBirthYear ? Number(editBirthYear) : null,
+            deathYear: editDeathYear ? Number(editDeathYear) : null,
+          }
         : member
     );
     setTreeData(updatedTree);
@@ -661,7 +671,7 @@ export function useFamilyTreeState() {
   ]);
 
   const handleHorseSubmit = useCallback(
-    ({ name, sex, relationType }) => {
+    ({ name, sex, relationType, country, birthYear, deathYear }) => {
       if (!selectedHorse) {
         setManualHelper("Selecciona un caballo para continuar.");
         return;
@@ -747,6 +757,9 @@ export function useFamilyTreeState() {
           parent2Id: null,
           gender: expectedPartnerGender,
           partners: [selectedHorse.id],
+          country: country?.trim() || null,
+          birthYear: birthYear ? Number(birthYear) : null,
+          deathYear: deathYear ? Number(deathYear) : null,
         });
         const createdPartner =
           membersWithPartner[membersWithPartner.length - 1];
@@ -803,6 +816,9 @@ export function useFamilyTreeState() {
           parent1Id: father,
           parent2Id: mother,
           gender: normalizedGender,
+          country: country?.trim() || null,
+          birthYear: birthYear ? Number(birthYear) : null,
+          deathYear: deathYear ? Number(deathYear) : null,
         });
         const createdHorse = updatedMembers[updatedMembers.length - 1];
         const synchronized = synchronizePartners(
@@ -833,6 +849,9 @@ export function useFamilyTreeState() {
           parent1Id: null,
           parent2Id: null,
           gender: normalizedGender,
+          country: country?.trim() || null,
+          birthYear: birthYear ? Number(birthYear) : null,
+          deathYear: deathYear ? Number(deathYear) : null,
         });
         const createdParent = membersWithParent[membersWithParent.length - 1];
         if (createdParent?.id == null) {
@@ -941,6 +960,9 @@ export function useFamilyTreeState() {
     setMotherSearch,
     setEditName,
     setEditSex,
+    setEditCountry,
+    setEditBirthYear,
+    setEditDeathYear,
     resizeTimeoutRef,
     graphRef,
     setDimensions,
@@ -948,6 +970,9 @@ export function useFamilyTreeState() {
     setActiveTab,
     editName,
     editSex,
+    editCountry,
+    editBirthYear,
+    editDeathYear,
     manualHelper,
     fileInputRef,
     isEditDisabled,

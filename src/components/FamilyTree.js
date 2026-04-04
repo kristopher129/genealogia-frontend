@@ -27,6 +27,9 @@ const FamilyTree = () => {
     canonicalGender,
     setEditName,
     setEditSex,
+    setEditCountry,
+    setEditBirthYear,
+    setEditDeathYear,
     setFatherSearch,
     setMotherSearch,
     resizeTimeoutRef,
@@ -36,6 +39,9 @@ const FamilyTree = () => {
     setActiveTab,
     editName,
     editSex,
+    editCountry,
+    editBirthYear,
+    editDeathYear,
     manualHelper,
     fileInputRef,
     isEditDisabled,
@@ -77,6 +83,9 @@ const FamilyTree = () => {
     SEXO,
     setEditName,
     setEditSex,
+    setEditCountry,
+    setEditBirthYear,
+    setEditDeathYear,
     setFatherSearch,
     setMotherSearch,
     resizeTimeoutRef,
@@ -105,6 +114,12 @@ const FamilyTree = () => {
           onEditNameChange={setEditName}
           editSex={editSex}
           onEditSexChange={setEditSex}
+          editCountry={editCountry}
+          onEditCountryChange={setEditCountry}
+          editBirthYear={editBirthYear}
+          onEditBirthYearChange={setEditBirthYear}
+          editDeathYear={editDeathYear}
+          onEditDeathYearChange={setEditDeathYear}
           isEditDisabled={isEditDisabled}
           onEditSubmit={handleEditHorseSubmit}
           onDeleteHorse={handleDeleteHorse}
