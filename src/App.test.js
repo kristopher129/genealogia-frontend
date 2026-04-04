@@ -49,7 +49,7 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByText(/caballo seleccionado:/i);
-    expect(screen.getByText(/Niclas Superlongsurname/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pharos/i)).toBeInTheDocument();
   });
 
   test("carga datos persistidos", async () => {

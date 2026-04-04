@@ -51,7 +51,10 @@ const getChildren = (data, ...parents) => {
 
   if (parentDepthOffset != null) {
     children.forEach((child) => {
-      child.depthOffset = parentDepthOffset + 1;
+      // d3-dtree inserts `depthOffset` hidden nodes before each person (see dTree._preprocess).
+      // Incrementing per generation (parent + 1) stacks extra vertical levels so spacing grows
+      // toward the leaves; inherit the parent's value so each generation uses the same step.
+      child.depthOffset = parentDepthOffset;
     });
   }
 

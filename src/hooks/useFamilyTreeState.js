@@ -658,6 +658,9 @@ export function useFamilyTreeState() {
     });
     setManualHelper(`Caballo actualizado: ${trimmedName}.`);
   }, [
+    editBirthYear,
+    editCountry,
+    editDeathYear,
     editName,
     editSex,
     mapSexToGender,

@@ -1,1 +1,3 @@
-export { default } from "./FamilyTreePanelWithUndo";
+import FamilyTreePanelWithUndo from "./FamilyTreePanelWithUndo";
+
+export default FamilyTreePanelWithUndo;

@@ -8,6 +8,83 @@ export const ensurePartnersArray = (value) => (Array.isArray(value) ? value : []
 
 const isPlaceholderNode = (node) => Boolean(node?.extra?.isPlaceholder);
 
+/** Merges flat-record fields onto a tree spouse without overwriting with undefined. */
+const mergeSpouseFromFlatRecord = (spouse, flat) => {
+  if (!flat) {
+    return spouse;
+  }
+  const next = {
+    ...spouse,
+    name: flat.name ?? spouse?.name,
+  };
+  if (flat.gender != null) {
+    next.gender = flat.gender;
+  }
+  if (flat.nickname != null) {
+    next.nickname = flat.nickname;
+  }
+  return next;
+};
+
+/**
+ * Ensures each partner listed on the flat member has a marriage on the seeded node.
+ * dSeeder often omits childless unions; this rebuilds `marriages` in partner order.
+ */
+export const addMissingMarriages = (seededData, originalDataMap) => {
+  if (!Array.isArray(seededData)) {
+    return seededData;
+  }
+  return seededData.map((node) => addMissingMarriagesOnNode(node, originalDataMap));
+};
+
+const addMissingMarriagesOnNode = (node, originalDataMap) => {
+  if (!node || !Array.isArray(node.marriages)) {
+    return node;
+  }
+
+  const originalMember = originalDataMap.get(node.id);
+  const partnerIds =
+    originalMember != null ? ensurePartnersArray(originalMember.partners) : [];
+
+  const bySpouseId = new Map();
+  for (const m of node.marriages) {
+    if (m?.spouse && !isPlaceholderNode(m.spouse)) {
+      bySpouseId.set(m.spouse.id, m);
+    }
+  }
+
+  const mapMarriageChildren = (m) => ({
+    ...m,
+    children: Array.isArray(m.children)
+      ? m.children.map((child) => addMissingMarriagesOnNode(child, originalDataMap))
+      : m.children,
+  });
+
+  const orderedMarriages =
+    partnerIds.length > 0
+      ? partnerIds
+          .filter((pid) => pid != null && pid !== node.id)
+          .map((partnerId) => {
+            const existing = bySpouseId.get(partnerId);
+            if (existing) {
+              return mapMarriageChildren(existing);
+            }
+            const pm = originalDataMap.get(partnerId);
+            return {
+              spouse: pm
+                ? mergeSpouseFromFlatRecord({ id: pm.id }, pm)
+                : { id: partnerId, name: `ID ${partnerId}` },
+              children: [],
+            };
+          })
+      : node.marriages.map((m) => mapMarriageChildren(m));
+
+  return {
+    ...node,
+    marriages: orderedMarriages,
+  };
+};
+
 export const normalizeNullableId = (value) => {
   if (value == null) {
     return null;
@@ -170,13 +247,7 @@ const fixNodeSpouses = (node, originalDataMap) => {
         const correctSpouseId = availablePartners[0];
         const correctSpouseMember = originalDataMap.get(correctSpouseId);
         if (correctSpouseMember) {
-          // For corrected spouses, use the gender from the original member
-          spouse = {
-            id: correctSpouseId,
-            name: correctSpouseMember.name,
-            gender: correctSpouseMember.gender,
-            nickname: correctSpouseMember.nickname,
-          };
+          spouse = mergeSpouseFromFlatRecord({ id: correctSpouseId }, correctSpouseMember);
         }
       }
     }
@@ -184,14 +255,8 @@ const fixNodeSpouses = (node, originalDataMap) => {
     // Mark this spouse ID as used
     usedSpouseIds.add(spouse.id);
 
-    // Update the name, gender and nickname if we have the original member data
     if (originalSpouseMember && spouse.id === originalSpouseMember.id) {
-      spouse = {
-        ...spouse,
-        name: originalSpouseMember.name,
-        gender: originalSpouseMember.gender,
-        nickname: originalSpouseMember.nickname,
-      };
+      spouse = mergeSpouseFromFlatRecord(spouse, originalSpouseMember);
     }
 
     // Recursively fix children
@@ -285,9 +350,9 @@ export const useFamilyTreeLoader = ({ data, targetId, options, dimensions, onNod
         }));
         const seededData = seedFamilyTreeData(dataCopy, targetId, options);
 
-        // Create a map of original data for fixing spouse names
-        const originalDataMap = new Map(dataCopy.map(member => [member.id, member]));
-        const fixedSeededData = fixMultipleSpouseNames(seededData, originalDataMap);
+        const originalDataMap = new Map(dataCopy.map((member) => [member.id, member]));
+        const withAllPartners = addMissingMarriages(seededData, originalDataMap);
+        const fixedSeededData = fixMultipleSpouseNames(withAllPartners, originalDataMap);
 
         // Update classes for corrected spouses
         const updateNodeClasses = (node) => {
